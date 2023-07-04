@@ -142,3 +142,171 @@
         [g]. 회피를 하는 순간 회피 방향에 이동 방향 값을 대입한다.
         [h]. Move 함수로 가서 현재 회피 중 인지를 확인하고 회피 중 이라면 이동 방향에 회피 방향을 대입한다.
 */
+
+/*
+3. 3D 쿼터뷰 액션 게임 - 아이템 만들기
+
+    #1. 아이템 준비
+        [a]. 프리팹 망치를 하이어라키 창에 드래그드랍
+            MeshObject의 y축과 각도를 이쁘게 조정해 준다.
+
+    #2. 라이트 이펙트
+        [a]. 망치의 자식으로 빈 오브젝트를 만든다. Light
+            컴포넌트 Light를 추가한다.
+            y축을 올려서 빛이 잘보이게 한다.
+                Type : Point
+                Intensity 빛의 세기 조절
+                Range 빛의 범위 조절
+                Color 를 망치 색과 비슷하게 조절
+
+    #3. 파티클 이펙트
+        [a]. 망치의 자식으로 빈 오브젝트를 만든다. Particle
+            컴포넌트 Particle System을 추가한다.
+        [b]. Renderer에서 Material 을 기본 재질로 지정
+        [c]. Emission에서 파티클 출력 갯수를 지정한다.
+        [d]. Shape에서 모양을 바꿔준다.
+        [e]. Color Over LifeTime에서 색을 지정한다.
+        [f]. Size Over LifeTime에서 크기에 커브를 준다.
+        [g]. Limit Velocity Over LifeTime에서 저항값을 늘려 준다.
+        [h]. Start Life Time, Speed를 지정한다.
+
+    #4. 로직 구현
+        [a]. 망치에 리지드바디 컴포넌트와 구체 모양 컴포넌트 두 개를 부착한다.
+            구체 1은 플레이어 감지 Trigger
+            구제 2는 망치를 바닥에 고정시킬 충돌체
+        [b]. Item 스크립트를 만들고 망치에 부착한다.
+        [c]. 아이템의 타입을 알기 위해 enum을 활용한다.
+            Type { Ammo, Coin, Grenade, Heart, Weapon }
+            public Type type;
+        [d]. 아이템의 값 public int value;
+        [e]. 망치와 마찬가지로 권총, 기관총, 총알, 돈1,2,3, 수류탄, 하트를 만든다.
+        [f]. 스크립트로 가서 Update 함수에서 오브젝트에게 회전을 준다.
+            transform.Ratate(Vector3.up * 25 * Time.deltaTime);
+
+    #5. 프리팹 저장
+        [a]. 태그를 추가한다.
+            Item, Weapon
+        [b]. 아이템에 태그를 부착한다.
+        [c]. 프리팹 폴더를 만들어서 아이템을 에셋화 한다.
+        [d]. 에셋들의 좌표를 초기화
+*/
+
+/*
+4. 3D 쿼터뷰 액션 게임 - 드랍 무기 입수와 교체
+
+    #1. 오브젝트 감지
+        [a]. 플레이어가 아이템에 접근 하였는제 체크하는 함수를 만든다.
+            OnTriggerStay OnTriggerExit
+        [b]. 플레이어와 가까이에 있는 오브젝트를 활용하기 위해 속성을 만든다.
+            GameObeject nearObject;
+        [c]. Stay 함수에서 가까이에 있는 오브젝트의 tag가 Weapon일 경우 nearObject에 배정한다.
+        [d]. Exit 함수에서 가까이에 있는 오브젝트의 tag가 Weapon일 경우 nearObject에 null을 배정한다.
+
+    #2. 무기 입수
+        [a]. 상호작용 키를 Input Manager에 e키로 등록한다. Interaction
+        [b]. 속성으로 해당 키가 눌렸는지 체크할 불 변수, 플레이어의 무기 관련 배열 변수와 무기 보유 여부를 체크할 불 배열을 만든다.
+            bool iDown; public GameObject[] weapons; public bool[] hasWeapons;
+        [c]. 입력 받는 함수에서 상호작용 버튼의 입력을 저장한다.
+        [d]. 상호작용 함수를 만든다. Interaction
+            상호작용 버튼이 눌린 상태이면서 동시에 nearObject가 null이 아닐 경우 점프, 회피중이 아닌 경우
+                nearObject의 태그가 Weapon일 경우 해당 오브젝트로 부터 Item 스크립트를 받아 온다.
+                Weapon마다 value 속성에 각기 다른 값을 넣었다. 이 값을 지역 변수로 저장한다.
+                    int weaponIndex = item.value;
+                    hasWeapons[weaponIndex] = true;
+                    Destroy(nearObject);
+        [e]. 씬으로 나가서 HasWeapons에 무기 갯수를 지정한다.
+
+    #3. 무기 장착
+        [a]. Player객체의 자식 RightHand에 3D 오브젝트 실린더를 만든다. Weapon Point
+            손 안으로 위치를 대략적으로 맞추어 준다.
+            크기를 4로 맞춘다.
+            콜라이더 컴포넌트는 제거하고 MeshRenderer 컴포넌트는 비활성화 한다.
+            3가지 무기를 실린더의 자식으로 등록한다.
+                무기를 보며 WeaponPoint의 위치를 수정한다.
+            무기들을 모두 비활성화 한다.
+        [g]. 플레이어 스크립트의 속성 Weapons에 비활성화 한 무기 3가지를 넣어 준다.
+
+    #4. 무기 교체
+        [a]. 1,2,3번 키에 따라 보유하고 있는 무기를 교체할 예정이다.
+            버튼 입력 불 변수를 만든다. sDown1,2,3;
+        [b]. 입력 함수에서 Swap1,2,3 입력을 받아 저장한다.
+        [c]. Input Manager에 3개의 키 입력을 추가한다.
+        [d]. 무기 교체 함수를 만든다. Swap
+            먼저 배열의 인덱스를 지역 변수로 만들어 준다. weaponIndex = -1;
+            눌린 버튼에 따라서 인덱스 값이 지정된다.
+            sDown1 || sDown2 || sDown3 이 눌리고 점프 회피 중이 아닐 때
+                무기 배열의 인덱스 값을 활성화 한다.
+                    weapons[weaponIndex].SetActive(true);
+        [e]. 현재 손에 쥐고 있는 오브젝트를 알기위해 게임 오브젝트 속성을 갖는다.
+            GameObject equipWeapon;
+        [f]. 무기를 활성화 할 때 해당 무기를 속성에 저장하고 활성화 한다.
+            그리고 그 이전에 끼고 있던 무기는 비활성화 한다.
+                equipWeapon = weapons[weaponIndex];
+            단 빈손일 경우에는 비활성화 로직은 실행하지 않는다.
+                if(equipWeapon != null)
+        [g]. 무기 교체 애니메이션 클립을 애니메이터에 등록한다.
+            AnyState에 연결한다.
+            doSwap 트리거 파라미터를 추가한다.
+        [h]. 무기를 활성화 할 때 파라미터 전달
+        [i]. 무기를 교체하는 동안에 움직임의 제약을 걸기 위해 교체 중임을 체크할 불 속성을 만든다.
+            bool isSwap;
+        [j]. 코루틴 함수를 만들어서 무기를 교체하고 0.4초 뒤에 false 이전에는 true
+        [k]. 현재 사용중이 무기의 인덱스를 속성으로 갖는다.
+            int equipWeaponIndex = 1;
+        [l]. 없는 무기는 교체해서는 안되고 동일한 무기는 교체할 필요가 없다.
+            if(sDown1 && (!hasWeapons[0] || equipWeaponIndex== 0)) return;
+            나머지 무기도 마찬가지로
+        [m]. 인덱스는 무기를 교체할 때 배정한다.
+            equipWeaponIndex = weaponIndex;
+*/
+
+/*
+5. 3D 쿼터뷰 액션 게임 - 아이템 먹기 & 공전물체 만들기
+
+    #1. 변수 생성
+        [a]. 플레이어 스크립트로 가서 탄약 동전 체력 수류탄 변수를 속성으로 갖는다.
+            public int ammo; public int coin; public int health; public int hasGrenade;
+        [b]. 각 수치의 최대값도 속성으로 만든다. max...
+        [c]. 씬으로 나가서 최대값을 지정한다.
+
+    #2. 아이템 입수
+        [a]. 아이템과 접촉하였을데 획득하도록 트리거 함수를 만든다.
+            OnTriggerEnter
+        [b]. 만약 Item 태그와 접촉했다면 switch문을 통해 아이템 타입 별로 로직을 작성한다.
+        [c]. Item.Type.Ammo
+            ammo += item.value;
+            단 max값을 넘을 경우 max값을 배정
+        [d]. Item.Type.Coin, Heart, Grenade도 마찬가지로 작성
+        [e]. switch문을 빠져 나온뒤 충돌한 오브젝트 삭제
+
+    #3. 공전물체 만들기
+        [a]. 플레이어가 획득한 수류탄이 플레이어를 공전하도록 먼저 속성으로 공전할 오브젝트 배열을 만든다.
+            public GameObject[] grenades;
+        [b]. 빈 오브젝트를 만든다. Grenade Group
+            자식으로 빈 오브젝트를 만들어서 동서남북으로 위치를 지정해 준다.
+        [c]. 수류탄 프리팹을 각 빈 오브젝트의 자식으로 한 개씩 넣어 준다.
+            수류탄의 각도를 z 30
+        [d]. Material을 교체한다.
+        [e]. 수류탄의 Mesh Object에게 파티클 컴포넌트를 부착한다.
+            Emission Distance 10으로 지정하여 움직임에 따라 발생하도록 한다.
+            Simulation Space를 World로 교체하여 입자가 수류탄을 따라가지 않도록 한다.
+            그 외의 옵션을 조정한다.
+
+    #4. 공전 구현
+        [a]. Orbit 스크립트 작성하고 동서남북 빈 오브젝트에 각각 부착
+        [b]. 속성으로 플레이어 위치와 공전 속도, 플레이어와 수류탄 간의 거리를 갖는다.
+            public Transform target; public float orbitSpace; Vector3 offSet;
+        [c]. Update함수에서 플레이어를 기준으로 주위를 돈다.
+            transform.RotateAround(target.position, Vector3.up, orbitSpeed * Time.deltaTime);
+        [d]. 이때 RotateAround함수가 수류탄의 위치를 지정하여 플레이어 움직임을 똑바로 따라가지 못하고 있다.
+        [e]. Start함수에서 offSet 속성에 거리 값을 저장한다.
+            offSet = transform.position - target.position;
+        [f]. Update함수에서 플레이어와 수류탄의 거리 값을 이용하여 수류탄의 위치를 지정해 준다.
+            transform.position = target.position + offSet;
+        [g]. 회전 로직 이후에 거리 값을 다시 한번 갱신하여 목표와의 거리를 지속적으로 유지해 준다.
+            offSet = transform.position - target.position;
+        [h]. 자식으로 등록되어 있는 수류탄 오브젝트를 Player의 속성 grenades에 넣어 준다.
+            그리고 오브젝트들은 비활성화 시킨다.
+        [i]. Player 스크립트에서 수류탄을 획득하는 로직에서 수류탄을 획득할 때 오브젝트를 활성화 시킨다.
+            grenade[hasGrenades].SetActive(true);
+*/
