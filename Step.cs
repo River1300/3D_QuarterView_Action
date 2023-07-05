@@ -310,3 +310,195 @@
         [i]. Player 스크립트에서 수류탄을 획득하는 로직에서 수류탄을 획득할 때 오브젝트를 활성화 시킨다.
             grenade[hasGrenades].SetActive(true);
 */
+
+/*
+6. 3D 쿼터뷰 액션 게임 - 코루틴으로 근접 공격 구현하기
+
+    #1. 변수 생성
+        [a]. 무기 정보를 갖는 스크립트를 만든다. Weapon
+            플레이어 자식으로 두었던 무기들에게 부착한다.
+        [b]. 무기의 타입을 열거형으로 갖는다. Type { Melee, Range }
+            public Type type;
+            무기의 공격력과, 공격 속도, 공격 범위, 공격 효과를 속성으로 갖는다.
+            public int damage; public float rate; public BoxCollider meleeArea; public TrailRenderer trailEffect;
+
+    #2. 근접 공격 범위
+        [a]. 씬으로 나가서 속성을 채운다.
+            망치 오브젝트에게 박스 콜라이더를 부착한다. 콜라이더 위치를 타격 위치로 조정한다.
+            태그 Melee를 추가하고 망치에 적용한다.
+            Trigger 체크
+
+    #3. 근접 공격 효과
+        [a]. 망치의 자식으로 빈 오브젝트를 만든다. Effect
+            Trail Renderer 컴포넌트를 부착한다.
+                움직이는 물체의 꼬리처럼 이펙트가 생성된다.
+                Material 지정
+                그래프에 Add Key로 커브를 주어 꼬리 모양처럼 만든다.
+                Time을 줄여 준다.
+                Min Vertax Distance를 높여서 조금 더 각진 모양으로 만들어 준다.
+                색을 바꾼다.
+                이펙트 위치를 조절한다.
+        [b]. Weapon 속성에 이펙트를 넣어 준다.
+        [c]. 이펙트의 Trail Renderer 비활성화
+        [d]. 망치의 박스 콜라이더 비활성화
+
+    #4. 공격 로직( 코루틴 )
+        [a]. Weapon 스크립트로 가서 무기 사용 함수를 만든다.
+            public void Use()
+        [b]. 스크립트 부착된 무기의 타입이 Melee일 경우 휘두루는 코루틴 함수는 호출한다.
+        [c]. IEnumerator Swing()
+            한 프레임 쉬고 콜라이더와 이펙트를 활성화 한다.
+            meleeArea.enabled = true;
+            trailEffect.enabled = true;
+            무기 공속에 맞추어 잠시 쉬어준뒤 콜라이더 비활성화 하고 잠시 쉬었다가 이펙트도 비활성화
+
+    #5. 공격 실행
+        [a]. Player 스크립트에 공격 키 입력 불, 공격 딜레이, 공격 준비 속성을 만든다.
+            bool fDown; float fireDelay; bool isFireReady;
+        [b]. 기존에 지정해 둔 현재 장비 속성을 GameObject에서 Weapon올 바꿔준다.
+            Weapon equipWeapon;
+        [c]. 입력 함수에서 무기 공격 키를 입력 받는다.
+        [d]. Attack() 함수를 만든다.
+            손에 무기가 있는지 먼저 확인한다.
+                if(equipWeapon == null) return;
+            무기 딜레이에 시간을 더해준다.
+                fireDelay += Time.deltaTime;
+            공격 준비 속성에 딜레이 시간을 체크한다.
+                isFireReady = equipWeapon.rate < fireDelay;
+            공격 버튼을 눌렀고 공격 준비가 되었고 회피중이 아니고, 교체 중이 아닐 때
+                Weapon스크립트의 Use() 함수를 호출한다.
+                    equipWeapon.Use();
+                애니메이션 트리거를 전달한다.
+                공격을 하였으니 fireDelay는 초기화
+        [e]. 애니메이션 클립을 애니메이터에 추가한다.
+            doSwing 트리거를 추가한다.
+*/
+
+/*
+7. 3D 쿼터뷰 액션 게임 - 원거리 공격 구현
+
+    #1. 총알, 탄피 만들기
+        [a]. 빈 오브젝트를 만든다. Bullet HandGun
+            트레일 렌더러 컴포넌트 부착
+                속성을 날아가는 총알처럼 조정해 준다.
+        [b]. 리지드 바디와 스피어 콜라이더 부착
+            콜라이더의 크기를 대략 총알 크기 정도록 조정해 준다.
+        [c]. 핸드건 총알을 복사한다. Bullet SubMachineGun
+            약간의 변화를 준다.
+        [d]. 탄피 프리팹을 하이어라키 창에 등록
+            MeshObject의 크기를 0.5
+        [e]. 탄피에게 리지드바디와 박스콜라이더를 부착한다.
+            콜라이더 크기 조정
+        [f]. 총알 스크립트를 만든다. Bullet
+        [g]. 속성으로 데미지를 갖는다. public int damage;
+        [h]. 충돌 이벤트 함수를 만든다. OnCollisionEnter
+            바닥 태그와 충돌하였을 경우 3초 뒤에 사라진다.
+            그게 아니라 벽에 충돌하였을 경우 바로 제거된다.
+        [i]. Bullet 스크립트를 3개의 총알, 탄피에 부착한다.
+        [j]. 프리팹으로 저장한다.
+
+    #2. 발사 구현
+        [a]. 발사 애니메이션 클립을 애니메이터에 등록한다.
+            doShot 트리거 추가
+        [b]. Player 스크립트 Attack() 함수에 무기의 타입에 따른 각기 다른 로직을 만든다.
+            삼항 연산자로 각기 다른 트리거를 애니메이터에 전달한다.
+                anim.SetTrigger(equipWeapon.type == Weapon.Type.Melee ? "doSwing" : "doShot");
+        [c]. 씬으로 나가 플레이어 자식으로 두었던 총 오브젝트들의 속성을 채워준다.
+            총알이 발사되는 위치와 탄피가 나오는 위치를 지정해 준다.
+                Weapon 스크립트에 속성으로 준다.
+                    public Transform bulletPos; public GameObject bullet; public Transform bulletCasePos; public GameObejct bulletCase;
+        [d]. Player의 바로 밑 자식으로 빈 오브젝트를 만든다. Bullet Pos
+            총알이 발사될 위치를 지정해 준다.
+            총의 자식으로 빈 오브젝트를 만든다. Case Pos
+                게임 씬의 툴 좌표 기준을 Global에서 Local로 바꿔준다.
+                탄피가 나오는 위치를 지정해 준다.
+        [e]. Weapon 속성에 위치들과 프리팹들을 넣어 준다.
+        [f]. Weapon 스크립트 Use 함수에서 플레이어의 공격키에 맞추어 출력되도록 되었다.
+            Type.Range일 경우를 추가한다.
+        [g]. Shot 코루틴 함수를 만든다.
+            총알을 발사하고 일정 시간 쉬었다가 탄피 배출
+                GameObject instanceBullet = Instantiate(bullet, bulletPos.position, bulletPos.rotetion);
+                발사 이므로 힘을 가해야 한다. 리지드바디 컴포넌트를 받아와서 속도를 지정해 준다.
+                    Rigidbody bulletRigid = instantBullet.GetComponent<Rigidbody>();
+                    bulletRigid.velocity = bulletPos.forward * 50;
+            탄피 배출도 총알과 마찬가지로 인스턴스화 하고 리지드바디를 받아온다.
+            그 이후 탄피가 배출될 방향을 지정해 준다.
+                Vector3 caseVec = bulletCasePos.forward * 랜덤값 + Vector3.up * 랜덤값
+            그리고 일시적인 힘을 가해 탄피를 배출한다.
+            탄피에 약간의 회전 값을 추가로 준다.
+                rigid.AddTorque(Vector3.up * 10, ForceMode.Impulse);
+        [h]. Wall 태그를 만들고 벽에 등록한다.
+
+    #3. 재장전 구현
+        [a]. Weapon 스크립트에서 전체 탄약과 현재 탕약을 속성으로 갖는다.
+            public int maxAmmo; public int curAmmo;
+        [b]. Use함수에서 Type.Range이면서 동시에 총알이 남아있을 때 코루틴을 호출하도록 한다.
+            코루틴을 호출하기 전에 총알을 --;
+        [c]. Player스크립트에 재장전 키와 재장전 중 속성으로 만든다. bool rDown; bool isReload;
+        [d]. Reload() 함수를 만든다.
+            현재 손에 든 무기가 없다면 반환 equipWeapon == null
+            현재 손에 든 무기의 타입이 근접이여도 반환 type == Weapon.Type.Melee
+            플레이어가 보유한 총알이 없다면 반환
+            rDown 이 true이고 점프나 회피, 재장전 중이 아니고, 공격 준비 상태일 때 파라미터 전달
+            isReload = true; 
+            장전 완료 함수를 만들어서 인보크로 호출한다.
+        [e]. InputManager에서 Reload 로 r 키를 만든다.
+        [f]. 재장전 애니메이션 클립을 애니메이터에 등록
+            doReload 트리거 생성
+        [g]. ReloadOut
+            플레이어가 보유한 총알이 해당 무기의 재장전 총알 갯수와 비교하여 재장전을 실행한다.
+                int reAmmo = ammo < equipWeapon.maxAmmo ? ammo : equipWeapon.maxAmmo;
+            equipWeapon.curAmmo = reAmmo;
+            ammo -= reAmmo;
+            isReload = false;
+        [h]. 플레이어 자식인 총들의 장전 Ammo값을 지정해 준다.
+
+    #4. 마우스 회전
+        [a]. Player 스크립트로 가서 메인 카메라 속성을 만든다.
+            public Camera followCamera;
+            메인 카메라를 넣은다.
+        [b]. Turn() 함수로 가서 마우스에 의한 회전 로직을 작성한다.
+            Ray를 활용하여 스크린에 찍인 좌표로 회전하도록 한다.
+            Ray ray = followCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit rayHit;
+            if(Physics.Raycast(ray, out rayHit, 100))
+                레이가 다은 지점과 플레이어의 위치를 빼기 연산하여 방향을 구한다.
+                    Vector3 nextVec = rayHit.point - transform.position;
+                transform.LookAt(transform.position + nextVec);
+            단, 마우스 클릭 fDown이 있을 때만 마우스에 의한 회전이 실행되도록 제어문을 만든다.
+        [c]. 플레이어가 높이가 있는 오브젝트르 바라볼 때 하늘을 보지 않도록 nextVec.y를 0으로 고정한다.
+*/
+
+/*
+8. 3D 쿼터뷰 액션 게임 - 플레이어 물리문제 고치기
+
+    #1. 자동 회전 방지
+        [a]. Transform의 위치를 매 프레임마다 지정하여 움직이는 플레이어가 다른 물체와 충돌하였을 때
+            플레이어의 리지드바디에 힘이 가해저 비정상적인 움직임이 발생한다.
+        [b]. FixedUpdate 함수를 만든다.
+            회전 방지 함수를 만든다. FreezeRotation
+        [c]. 리지드바디의 회전 속도를 0으로 고정 시킨다.
+            rigid.angularVeclocity = Vector3.zero;
+
+    #2. 충돌 레이어 설정
+        [a]. 오브젝트들 간에 불필요한 충돌을 무시하도록 한다.
+        [b]. Floor, Player, PlayerBullet, BulletCase 레이어를 추가하여 오브젝트에 등록해 준다.
+        [c]. Physics 세팅에서 플레이어와 플레이어 총알, 탄피의 충돌을 무시한다.
+
+    #3. 벽 관통 방지
+        [a]. 벽앞에 멈추는 기능을 할 함수를 만든다.
+            StopToWall
+        [b]. 플레이어의 앞으로 짧은 길이의 레이를 쏜다.
+            Debug.DrawRay(transform.position, transform.forward * 5, Color.green);
+        [c]. 벽 충돌을 감지할 불 속성을 만든다. bool isBoarder;
+        [d]. 속성에 벽과의 충돌을 체크하도록 한다.
+            isBoarder = Physics.Raycast(transform.position, transform.forward, 5, LayerMask.GetMask("Wall"));
+        [e]. Move함수에서 이동을 하기 위해 현재 위치에 미래의 위치를 더하는 작업을 맊는다.
+        [f]. 벽에 Wall 레이어를 추가해 준다.
+
+    #4. 아이템 물리 충돌 제거
+        [a]. 플레이어가 아이템의 지면 고정 콜라이더와 충돌하면 아이템에 예측하기 어려운 힘이 가해진다.
+        [b]. Item 스크립트에서 리지드바디와 스피어콜라이더를 속성으로 받는다.
+        [c]. OnCollisionEnter 함수를 만든다.
+            바닥에 다았을 때 리지드바디의 isKinematice을 활성화 시키고 콜라이더를 비활성화 한다.
+*/
