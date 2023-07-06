@@ -502,3 +502,117 @@
         [c]. OnCollisionEnter 함수를 만든다.
             바닥에 다았을 때 리지드바디의 isKinematice을 활성화 시키고 콜라이더를 비활성화 한다.
 */
+
+/*
+9. 3D 쿼터뷰 액션 게임 - 피격 테스터 만들기
+
+    #1. 오브젝트 생성
+        [a]. 3D 큐브를 만든다.
+            크기를 알맞게 지정한다.
+        [b]. 리지드바디
+            프리즈 로테이션 x,z
+        [c]. Enemy 스크립트를 만들고 큐브에 부착한다.
+
+    #2. 충돌 이벤트
+        [a]. 속성으로 체력과 리지드바디, 박스 콜라이더를 갖는다.
+            public int maxHealth; public int curHealth; Rigidbody rigid; BoxCollider boxCollider;
+        [b]. 충돌 이벤트 함수를 만든다.
+            OnTriggerEnter
+            충돌한 태그가 Melee 일때
+            충돌한 태그가 Bullet 일때
+        [c]. 충돌한 오브젝트로 부터 Weapon 스크립트를 받아온다.
+            Weapon weapon = other.GetComponent<Weapon>();
+            체력을 줄인다.
+                curHealth -= weapon.damage;
+            총알은 총알 스크립트로
+        [d]. 총알 프리팹에 Bullet 태그와 트리거 체크를 해준다.
+        [e]. Bullet 스크립트에서 OnTriggerEnter로 벽 태그를 지정한다.
+
+    #3. 피격 로직
+        [a]. Enemy의 피격 함수를 코루틴으로 만든다. OnDamage
+        [b]. 먼저 색을 바꾼다.
+            Material mat 속성을 갖는다.
+                mat = GetComponent<MeshRenderer>().material;
+            mat.color = Color.red;
+        [c]. 0.1초 쉬었다가, 체력이 다 달았는제 제어문으로 확인한다.
+        [d]. 만약 체력이 남아 있다면 색을 다시 원상 복구 Color.white;
+        [e]. 만약 죽었다면 Color.gray;
+            그리고 4초 뒤에 죽인다.
+                Destroy(gameObject, 4);
+        [f]. 죽은 상태에서는 추가 피격을 받지 않도록 물리 레이어를 추가한다.
+            EnemyDead 레이어를 추가하고 Physics 세팅에서 Floor, Wall을 제외한 모든 것과 충돌을 무시한다.
+        [g]. 몬스터가 제거되기 전에 레이어를 바꿔준다.
+            gameObject.layer = 번호;
+
+    #4. 넉백 추가
+        [a]. 죽을 때 넉백을 주기 위해 Melee와 Range에서 피격 방향을 저장한다.
+            Vector3 reactVec = transform.position - other.transform.position;
+        [b]. OnDamage에서 매개변수로 벡터를 받는다.
+        [c]. 리지드바디로 힘을 가해서 넉백을 준다.
+            reactVec = reactVec.normalized;
+            reactVec += Vector3.up;
+            rigid.AddForce()
+        [d]. 총알의 경우 Enemy와 충돌하여 방향을 구한 뒤에 사라진다.
+*/
+
+/*
+10. 3D 쿼터뷰 액션 게임 - 수류탄 구현하기
+
+    #1. 오브젝트 생성
+        [a]. 수류탄 프리팹을 하이어라키창에 등록한다.
+        [b]. GrenadeEffect 파티클을 수류탄 자식으로 등록한다.
+        [c]. 리지드바디와 스피어 콜라이더를 부착한다.
+        [d]. 피직스 매터리얼을 추가하여 모든 저항 갑을 1로 지정하여 콜라이더에 부착한다.
+        [e]. MeshObject에 트레일 렌더러를 추가한다.
+            마테리얼, 커브, 색, 시간을 지정한다.
+        [f]. 수류탄의 레이어를 PlayerBullet으로 지정한다.
+        [g]. 프리팹화 한다.
+
+    #2. 수류탄 투척
+        [a]. 플레이어 스크립트에서 수류탄 프리팹 속성과 g키 불 속성을 갖는다.
+            public GameObject grenadeObj; bool gDown;
+        [b]. 입력 키를 받는다.
+        [c]. Grenade() 함수를 만든다.
+            수류탄이 없을 때 반환
+            g버튼을 눌렀고 재장전이나 무기 교체를 하지 않을 때 수류탄을 던진다.
+        [d]. 마우스를 클릭한 자리에 수류탄을 던진다.
+            Ray ray = followCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit rayHit;
+            if(Physics.Raycast(ray, out rayHit, 100))
+                Vector3 nextVec = rayHit.point - transform.position;
+                nextVec.y = 15;
+                수류탄 인스턴스화
+                    GameObject instantGrenade = Instantiate(grenadeObj, transform.position, ...);
+                리지드 바디를 받아오고 힘을 주어 던진다.
+                회전도 
+                    rigid.Grenade.AddTorque(Vector3.back * 10, 임펄스);
+                그 이후에는 수류탄 개수 차감, 공전하는 수류탄 하나 제거
+                    grenades[hasGrenades].비활성화
+        [e]. 프리팹의 수류탄 이펙트를 비활성화 시켜 놓는다.
+
+    #3. 수류탄 폭발
+        [a]. Grenade 스크립트 생성
+        [b]. 수류탄의 자식 MeshObject와 Effect를 활성화 비활성화 하기 위해 속성으로 갖는다.
+            public GameObject meshObj; public GameObject effectObj; public Rigidbody rigid;
+        [c]. 코루틴 함수를 만들어서 3초 뒤에 폭발하도록 한다.
+            rigid.velocity 속도 0, angularVelocity 0
+            meshObje 비활성화 effectObje 활성화
+        [d]. Start 함수에서 코루틴 함수 호출
+
+    #4. 수류탄 피격
+        [a]. 다시 수튜탄 스크립트의 코루틴 함수로 가서 동그란 레이를 발사하도록 한다.
+        [b]. 배열로 충돌한 모든 적을 받아온다.
+            RaycastHit[] rayHits = Physics.SphereCastAll(transform.position, 15, Vector3.up, 0, LayerMast.GetMask("Enemy));
+        [c]. 반복문으로 몬스터 스크립트를 받아, 수류탄 피격 함수를 호출한다.
+            foreach(RaycastHit hitObj in rayHits)
+        [d]. Enemy스크립트에서 수류탄 피격 함수를 만든다.
+            public void HitByGrenade(Vector3 explosionPos)
+            체력을 100 차감하고 피격 위치 벡터를 구하고, 피격 코루틴을 호출한다.
+        [e]. 수류탄에 의해 사망할 경우 더 격렬하게 사망하도록 한다.
+            OnDamage함수의 매개 변수로 수류탄인지를 반든다. bool isGrenade
+            죽는 로직에서 수류탄인지 제어문을 만든다.
+                수류탄일 경우 Vector3.up을 더 증가 시킨다.
+                회전을 주기 위해 몬스터의 freezeRotation = false로 바꿔준다.
+                rigid.AddTorque(reactVec * 15, 임펄스);
+        [f]. 다시 수류탄 스크립트로 가서 반복문을 탈출 한 뒤 5초뒤 수류탄을 제거한다.
+*/
