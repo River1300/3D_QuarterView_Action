@@ -616,3 +616,308 @@
                 rigid.AddTorque(reactVec * 15, 임펄스);
         [f]. 다시 수류탄 스크립트로 가서 반복문을 탈출 한 뒤 5초뒤 수류탄을 제거한다.
 */
+
+/*
+11. 3D 쿼터뷰 액션 게임 - 목표물을 추적하는 AI 만들기
+
+    #1. 오브젝트 생성
+        [a]. 몬스터A 프리팹을 하이어라키창에 등록
+        [b]. 리지드바디, 박스 콜라이더 부착, Enemy 스크립트 부착
+            FreezeRotetion x, z
+            박스 콜라이더 위치와 크기 조정, 체력 지정
+        [c]. 기존 Enemy 스크립트의 마테리얼 초기화에서 GetComponentInChildren로 수정한다.
+        [d]. Enemy 객체에 Enemy 태그와 레이어를 등록해 준다.
+
+    #2. 네비게이션
+        [a]. EnemyA에 Nav Mesh Agent 컴포넌트를 추가한다.
+        [b]. 스크립트로 가서 Player 목표물과 네비게이션을 속성으로 갖는다.
+            using UnityEngine.AI; public Transform Target; NavMeshAgent nav;
+            네비게이션 초기화
+        [c]. Update 함수에서 목표를 추적한다.
+            nav.SetDestination(target.position);
+        [d]. Window -> AI -> Navigation
+            Bake -> Bake
+        [e]. 몬스터가 물리적인 충돌이 발생할 경우 리지드바디에 의해 움직이게 되는데 이것을 막는다.
+        [f]. FixedUpdate에서 속력 값을 0으로 고정해 준다.
+            FreezeVelocity()
+                rigid.velocity, angularVelocity 모두 Vector3.zero;
+
+    #3. 애니메이션
+        [a]. 애니메이터 컨트롤러를 만든다. Enemy A
+        [b]. Enemy A의 애니메이션을 모두 컨트롤러에 등록한다.
+        [c]. 트랜지션을 연결한다.
+            isWalk, isAttack, doDie 파라미터 추가
+        [d]. Enemy 스크립트에 애니메이터, 추격 중 불 속성을 추가한다. isChase;
+        [e]. 추격 함수를 추가한다.
+            ChaseStart()
+                추격 중일 때는 불 값으로 true, 파라미터 전달
+        [f]. Update 함수에서 플레이어를 추격하는 것은 isChase가 true일 때만 하도록 제어문을 만든다.
+        [g]. 인보크로 Awake함수에서 ChaseStart를 호출한다.
+        [h]. 몬스터가 죽는 로직에서 파라미터 전달, isChase false, 네비게이션 비활성화
+            nav.enabled = false;
+        [i]. 리지드바디의 속도를 고정하는 로직에서도 추적 중일 때만 고정하도록 제어문을 만든다.
+*/
+
+/*
+12. 3D 쿼터뷰 액션 게임 - 다양한 몬스터 만들기
+
+    #1. 플레이어 피격
+        [a]. Player 스크립트에서 Item과 충돌하는 것 이외에 EnemyBullet과 충돌하는 경우를 추가한다.
+        [b]. 충돌한 적 총알로 부터 총알 스크립트를 받아와서 health를 차감한다.
+        [c]. 피격 코루틴 함수를 만든다. OnDamage()
+            피격 직후 일정 시간의 무적 타임이 필요하므로 무적타입 bool 속성을 갖는다. bool isDamage;
+            처음 피격을 당하면 true;
+            1초간 무적시간으로 지정하고 false;
+        [d]. 적 총알과의 충돌 로직은 isDamage가 false일 때만 실행하도록 제어문을 만든다.
+        [e]. 피격시 플레이어의 색을 바꾸기 위해 마테리얼 속성을 갖는다.
+            MeshRenderer[] meshs;
+            meshs = GetComponentsInChildren<...>();
+        [f]. isDamage 가 true일 때 반복문으로 Player의 파츠를 순회하며 색을 바꿔준다.
+            foreach(MeshRenderer mesh in meshs)
+                mesh.material.color = Color.yellow;
+            일전 시간이 지나고 원상 복구 한다.
+        [g].빈 오브젝트를 만든고 박스 콜라이더를 EnemyBullet, Bullet 스크립트를 부착한다. EnemyBullet
+
+    #2. 몬스터 움직임 보완
+        [a]. Enemy 스크립트에서 Update 함수로 플레이어를 추적하였는데, 이때 제어문을 수정한다.
+            nav.enabled : 네비게이션이 활성화 되어 있을 때만 추적한다.
+            그리고 네비게이션이 멈추는 조건으로 isChase가 false인 경우를 추가한다.
+            nav.isStopped = !isChase;
+
+    #3. 일반형 몬스터
+        [a]. EnemyBullet 객체를 Enemy A의 자식으로 등록한다.
+            위치를 몬스터보다 조금더 앞쪽으로 지정해 준다.
+        [b]. Enemy 스크립트에 박스 콜라이더, 공격중 속성으로 만든다.
+            public BoxCollider meleeArea; public bool isAttack;
+        [c]. 플레이어를 공격할 수 있는 공격 범위에 들어왔는지 체크하는 함수를 만든다.
+            Targeting(), FixedUpdate() 함수에서 호출한다.
+        [d]. 스피어 캐스트로 플레이어를 감지한다.
+            먼저 감지 범위를 변수로 만든다.
+                float targetRadius = 1.5f; float targetRange = 3f;
+        [e]. Ray를 발사하고 플레이어를 감지한다.
+            RaycastHit[] rayHits = Physics.SphereCastAll(transform.position, targetRadius, transform.forward, targetRange, LayerMask.GetMask("Player"));
+            플레이어가 감지되었다면 구조체에 길이가 들어올 것이고 몬스터가 공격 중이 아니라면 공격을 하면된다.
+            if(rayHits.Length > 0 && !isAttack)
+        [f]. 공격 코루틴 함수를 만든다. Attack()
+            먼저 정지를 한 다음, 애니메이션과 함꼐 공격 범위를 활성화하여 공격한다.
+                isChase = false; isAttack = true; anim.SetBool(...); meleeArea.enabled = true;
+            공격 애니메이션 출력 중 때리는 타이밍에 공격 범위를 활성화 하고
+            잠시 쉬었다가 활성화 하였던 것을 비활성화 하고 다시 추적한다.
+        [g]. 씬으로 나가서 EnemyBullet의 박스 콜라이더를 비활성해 해 놓는다.
+
+    #4. 돌격형 몬스터
+        [a]. Enemy B 프리팹을 하이어라키 창에 등록
+            리지드바디, 박스콜라이더, Enemy 스크립트, Nav Mesh Agent 컴포넌트 부착
+            속성 값을 채워 준다.
+            Enemy A의 EnemyBullet을 Enemy B에도 적용 시킨다.
+        [b]. 애니메이터 컨트롤러 Enemy A를 복사하여 B를 MeshObject에 부착한다.
+        [c]. Nav Mesh Agent의 속성 Angular Speed A,B 360, Acceleration A는 20, B는 50
+        [d]. enum으로 몬스터의 타입을 속성으로 갖는다.
+            public enum Type { A, B, C }; public Type enemyType;
+        [e]. Targeting 함수에서 플레이어를 감지하는 로직에 Type 별로 다르게 작성한다.
+            switch 문을 활용하여  타입별로 각기 다른 반지름과 공격 범위를 지정해 준다.
+                Radius = 1f; Range 12f;
+        [f]. Attack 코루틴에서도 switch문으로 타입별 다른 공격을 실행한다.
+            B타입은 0.1초 잠깐 멈추었다가 AddForce로 transform.forward로 플레이어에게 발사된다.
+            이때 콜라이더를 활성화 한다.
+            0.5초 뒤에 velocity를 0으로 하여 멈춘다. 콜라이더 비활성화
+            그리고 2초간 대기
+
+    #5. 원거리형 몬스터
+        [a]. Enemy C 프리팹을 하이어라키 창에 등록
+            컴포넌트들을 부착
+        [b]. Missile 프리팹을 하이어라키 창에 등록
+            MeshObject의 y축 값 3
+                몬스터 방향과 동일하게 y 90
+        [c]. Missile 스크립트를 만들고 MeshObject에 부착
+            Update 함수에서 미사일을 회전 시킨다.
+                transform.Rotate(Vector3.right * 30 * Time.de...);
+        [d]. Missile의 자식으로 빈 오브젝트를 만든다. Effect
+            위치를 미사일 뒤로 지정해 주고 파티클 시스템 컴포넌트를 부착한다.
+                마테리얼, 이미션, 색, 크기, 모양, 시간 등을 조정해 준다.
+        [e]. Missile에 리지드바디, 박스 콜라이더, Bullet 스크립트를 부착해 준다. 트리거
+            Tag와 Layer도 지정해 준다.
+        [f]. Missile을 프리팹화 한다.
+        [g]. Enemy 애니메이터 컨트롤러를 복사하여 C로 지정한다.
+            애니메이션 스테이드에 클립을 교체해 준다.
+        [h]. 스크립트의 속성을 채워 준다.
+        [i]. 미사일 프리팹을 담아둘 속성을 갖는다.
+            public GameObject bullet;
+        [j]. Targeting
+            Radius = 0.5f; Range = 25f;
+        [k]. Attack
+            0.5초 쉬었다가 미사일을 인스턴트화 한다.
+                GameObject instantBullet = ...
+            리지드바디를 받아와서 transform.forward로 velocity를 지정해 준다.
+            그리고 2초간 대기
+        [l]. Enemy와 EnemyBullet은 서로 충돌하지 않도록 Physics에서 세팅한다.
+        [m]. Missle의 리지드바디의 UseGravity를 해제
+        [n]. EnemyBullet 태그를 부착한 오브젝트들 중 Missile 만이 유일하게 리지드바디를 가지고 있다.
+            플레이어 스크립트로 가서 EnemyBullet과 충돌 하였을 때 리지드바디가 있는지 체크하여 있다면 제거한다.
+                if(other.GetComponent<Rigidbody>() != null) Destroy(other.gameObject);
+        [o]. 플레이어가 벽에 붙어있을 때 근접 공격 몬스터가 잘못 공격해서 벽에 닿으면 콜라이더가 제거될 수 있다.
+            Bullet 스크립트에서 근접 공격 범위가 제거되지 않도록 플래그를 만든다.
+                public bool isMelee;
+            if(!isMelee && other.gameObject.tag ...)
+        [p]. 근접 공격 오브젝트에 속성을 체크해 준다.
+*/
+
+/*
+13. 3D 쿼터뷰 액션 게임 - 다양한 패턴을 구사하는 보스 만들기
+
+    #1. 보스 기본 세팅
+        [a]. Boss 프리팹을 하이어라키 창에 등록
+        [b]. MeshObject에 애니메이터 컨트롤러를 복사하여 부착한다.
+            Walk, Attack 스테이트, 파라미터 제거
+            Shot, BigShot, Taunt 클립을 등록하고 Any State로 연결
+            각각의 트리거 생성
+        [c]. Enemy D에 리지드바디와 박스 콜라이더, 네비게이션 부착
+            Nav Speed 40, Angular Speed 0, Acceleration 60
+        [d]. 보스의 귀에서 미사일을 발사하기 위해 위치를 잡아 준다.
+            Enemy D의 자식으로 빈 오브젝트를 만들고 미사일이 발사될 위치로 이동 시킨다.
+                Missile Port A, B
+        [e]. 보스의 공격 패턴 중 높이 점프하였다가 뭉게버리는 패턴이 있다.
+            이를 위해 보스의 발에 타격 범위를 지정해 주자.
+                Enemy D의 자식으로 빈 오브젝트를 만들고 박스 콜라이더 부착 Melee Area
+                    트리거
+                박스 콜라이더는 비활성화 시켜 놓는다.
+        [f]. Enemy D는 Enemy 태그와 레이어, Melee Area는 EnemyBullet
+
+    #2. 투사체(미사일) 만들기
+        [a]. Missile Boss 프리팹, Boss Rock 프리팹을 하이어 라키 창에 등록
+        [b]. Missile Boss의 MeshObject y 축 위치 조정
+            z축 방향에 맞추어 미사일 y축 값을 회전
+            Missile 스크립트 부착
+        [c]. Missile Boss의 자식으로 빈 오브젝트를 만든다. Effect
+            파티클 시스템 부착
+            위치, 방향, 랜더러, 쉐이프, 색, 사이즈, 생명, 속도 지정
+            Simulation Space를 World로 지정
+        [d]. Missile Boss에 리지드바디, 박스 콜라이더, 네비게이션 부착
+            Use Gravity 해제, 트리거
+            EnemyBullet 태그와 레이어
+        [e]. 스크립트 생성 BossMissile
+            MonoBehaviour을 대신해서 Bullet 클래스를 상속 받는다.
+            네비게이션을 사용하기 때문에 AI헤더를 추가한다.
+        [f]. 플레이어의 위치와 네비게이션을 속성으로 갖는다.
+            public Transform target; NavMeshAgent nav;
+        [g]. Update() 함수에서 타겟을 추적한다.
+            nav.SetDestination(target.position);
+        [h]. 스크립트의 속성을 채워준다.
+
+    #3. 투사체(바위) 만들기
+        [a]. Boss Rock에 리지드바디, 스피어 콜라이더 부착
+            구를 예정이기 때문에 Mass를 높여 주고 Angular Drag를 없앤다.
+            x축으로만 구를 예정이므로 Freeze Rotation y, z축을 잠근다.
+        [b]. 스크립트 생성 BossRock
+            리지드바디, 회전 파워, 크기, 공격 준비 플래그를 속성으로 갖는다.
+                Rigidbody rigid; float angularPower = 2; float scaleValue = 0.1f; bool isShoot;
+        [c]. 기를 모으는 코루틴 함수를 만든다. GainPowerTimer
+            2.2초 대기 -> 발사 isShoot = true;
+        [d]. 발사하는 코루틴 함수를 만든다. GainPower
+            발사 준비되기 까지 계속 대기
+                while(!isShoot)
+                대기하면서 회전 속도와 크기를 점차적으로 증가 시킨다.
+                    angularPower += 0.02f; scaleValue += 0.005f; transform.localScale = Vector3.one * scaleValue; rigid.AddTorque(transform.right * angularPower, ForceMode.Acceleration);
+                    yield return null;
+        [e]. Awake() 함수에서 두 개의 코루틴 함수를 호출한다.
+        [f]. BossRock도 Bullet 클래스를 상속하도록 한다.
+        [g]. BossRock에 EnemyBullet 태그와 레이어를 등록
+        [h]. Bullet 스크립트에서 총알이 바닥에 충돌할 때 3초 뒤에 사라지는 로직을 만들어 두었다.
+            BossRock이라는 플래그를 만든다. public bool isRock;
+            !isRock을 제어문에 추가한다.
+        [i]. BossRock에 부착된 스피어콜라이더를 복사하여 트리거 체크하여 벽이나 플레이어에 충돌할 때 사라지도록 한다.
+        [j]. 미사일과 바위를 프리팹화 한다.
+        [k]. 위치 초기화
+    
+    #4. 보스 로직 준비
+        [a]. Boss 스크립트 역시 Enemy 클래스를 상속할 예정
+            Enemy 스크립트에서 Type을 추가한다.
+            Awack에서 플레이어 추적을 시작 했었는데 Type D는 추적하지 않도록 한다.
+            Update에서 네비게이션 추적의 제어문으로 Type D는 추적하지 않도록 한다.
+            Targeting 함수 로직또한 Type D는 하지 않는다.
+            피격을 받아 제거되는 로직에서도 Type D는 제외한다.
+        [b]. 몬스터가 피격 받을 때 색이 바뀌는데 이 때 Material 속성으로 하나의 Material만을 받아 왔었다.
+            속성을 배열로 바꿔준다.
+            foreach문으로 mesh.material.color 색을 바꾼다.
+        [c]. Boss 스크립트를 만들고 Enemey D에 부착
+            Enemy 클래스를 상속
+
+    #5. 기본 로직
+        [a]. 보스 미사일 프리팹, 미사일 발사 위치를 속성으로 갖는다.
+            public GameObject missile; public Transform missilePortA, B;
+            플레이어의 움직임을 통해 다음 플레이어의 위치를 저장할 벡터 속성을 갖는다.
+                Vector3 lookVec; Vector3 tauntVec;
+            보스가 내려찍기를 할 때 한 번 지정된 방향을 그대로 고정할 수 있도록 플래그 속성을 갖는다.
+                bool isLook;
+        [b]. Update 함수에서 플레이어를 바라보는 함수를 만든다.
+            플레이어를 바라보는 것이 true일 때 Player 처럼 수직, 수평 값을 받아서 저장하고 lookVec에 저장한다.
+                lookVec = new Vector3(h, 0, v) * 5f;
+            보스가 지정된 방향을 바라본다.
+                transform.LookAt(target.position + lookVec);
+        [c]. Start 함수에서 isLook true;
+        [d]. 씬으로 나가서 스크립트의 속성을 채워준다.
+
+    #6. 패턴 로직
+        [a]. Start 함수를 지우고 Awake 함수와 Think 코루틴 함수를 만든다.
+            Awake에서 코루틴을 호출한다.
+        [b]. 생각을 하기 위해 0.1초 정도 쉬고 공격 패턴을 랜덤으로 받는다.
+            int ranAction = Random.Range(0, 5);
+            switch문으로 3개의 패턴을 확률로 고려하여 나눈다.
+                미사일은 0, 1
+                바위 2, 3
+                점프 4
+        [c]. 코루틴으로 3개의 공격 패턴을 만들어 주고 swich문에서 호출한다.
+        [d]. Enemy 스크립트에서 public으로 지정하지 않았던 속성을 public으로 바꿔준다.
+            이때 Awake 함수로 초기화 하였던 속성들은 실행이 되지 않는다.
+                생명 주기 이론 상으로 Awake 함수는 상속받은 자식 스크립트만 단독으로 실행된다.
+                    네임스페이스 AI 추가
+            그러므로 Boss 스크립트의 Awake() 함수에서 다시 초기화를 해준다.
+        [e]. 공격 패턴 코루틴 함수에서 각각의 애니메이션 파라미터를 전달 한다.
+            액션 하나당 걸리는 시간을 준다. 미사일 2, 바위 3, 점프 1
+            액션이 끝나면 다시 생각을 한다.
+        [f]. isLook을 public으로 지정하여 시작 부터 플레이어를 바라보도록 체크한다.
+        [g]. MissileShot 코루틴 함수에서 애니메이션을 출력하고 0.2초 뒤에 한 발, 0.3초 뒤에 한 발을 발사
+            GameObject instantMissileA = Instantitate(missile, missilePortA.position, ...)
+            만들어진 미사일로 부터 스크립트를 받아와서 미사일 속성 target을 채워준다.
+        [h]. RockShot 코루틴 함수에서 기를 모으는 동안 방향이 고정되어야 함으로 isLook false
+            애니메이션이 실행 되고 바위를 인스턴스화
+                Instantiate(bullet, transform.position, transform.rotation);
+            착지 후에 true;
+        [i]. Taunt 코루틴 함수에서 내려찍을 위치로 점프한다.
+            tauntVec = target.position + lookVec;
+            isLook = false;
+            보스의 충돌체가 플레이어와 충돌하여 밀지 않도록 잠시 비활성화
+            1.5초 뒤에 보스 발바닥 콜라이더를 활성화
+                meleeArea.enabled = true;
+            0.5초 뒤에 다시 발바닥 비활성화
+            1초 뒤에 isLook true, 충돌체도 true;
+        [j]. 보스는 네비게이션을 사용하지 않기 위해 Awake에서 정지 시킨다.
+            nav.isStopped = true;
+        [k]. Update에서 isLook이 false일 경우 착지 위치로 추적
+            nav.SetDestination(tauntVec);
+            Taunt 코루틴 함수에서 isLook을 false로 바꿀 떄 네비게이션의 멈춤도 해제한다.
+                nav.isStopped = false;
+                점프 공격이 끝나면 다시 true;
+        [l]. Enemy 스크립트에 죽었다는 플래그 속성을 만든다. isDead;
+        [m]. Enemy가 피격을 받아서 체력이 0 이하로 떨어질 때 isDead를 true로
+        [n]. Targeting 함수에서 제어문을 추가한다. !isDead
+            Boss 스크립트에서 Update 로직을 실행 하기 전에 isDead일 경우 모든 코루틴을 멈춘다.
+                StopAllCoroutines();
+                그리고 반환
+
+    #7. 로직 점검
+        [a]. Melee Area 오브젝트에 Bullet 스크립트 부착
+        [b]. 미사일 후속타가 플레이어 무적 중에는 Destroy가 실행되지 않는다.
+            Player 스크립트에서 무적 타임 제어문 밖에다가 EnemyBullet 태그 오브젝트를 제거하는 로직을 작성
+        [c]. 보스가 점프공격을 하였을 때 충돌체가 다시 활성화 되는데 이 때 플레이어가 튕겨저 나간다.
+            플레이어가 점프공격을 맞을 때 넉백이 되도록 한다.
+            Melee Area 객체를 Boss Melee Area로 명명
+        [d]. Player 스크립트에서 EnemyBullet 태그와 충돌 했을 때 지역 변수로 보스 공격인지 확인하고 Ondamage 함수의 매개 변수로 전달한다.
+            bool isBossAtk = other.name == "Boss Melee Area";
+        [e]. 만약 보스 공격을 받았다면 현재 플레이어 방향의 뒤로 힘을 가한다.
+            if(isBossAtk)
+                rigid.AddForce(transform.forward * -25, 임펄스);
+            1초가 지난 뒤에 다시 velocity를 0으로
+                if(isBossAtk)
+                    rigid.velocity = Vector3.zero;
+*/
