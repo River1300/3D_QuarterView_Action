@@ -921,3 +921,379 @@
                 if(isBossAtk)
                     rigid.velocity = Vector3.zero;
 */
+
+/*
+14. 3D 쿼터뷰 액션 게임 - UI 배치하기
+
+    #1. 캔버스 세팅
+        [a]. 캔버스 만들기
+        [b]. Pixel Perfect 체크
+        [c]. UI Scale Mode : Scale With Screen Size
+        [d]. 1920 * 1080
+
+    #2. 타이틀 메뉴 UI
+        [a]. 캔버스의 자식으로 UI Panel 생성 Menu Panel
+            Menu Panel의 자식으로 UI 이미지 생성 Title Image
+                Title 스프라이트 적용, y축을 올림
+            Menu Panel의 자식으로 UI 이미지 생성 MaxScore Image
+                Icon Score 스프라이트 적용
+            Menu Panel의 자식으로 UI 텍스트 생성 MaxScore Text
+                9999999
+            Menu Panel의 자식으로 UI 버튼 생성
+                Panel A 스프라이트 적용
+                버튼 텍스트 Game Start
+
+    #3. 인게임 주요 UI
+        [a]. 캔버스의 자식으로 UI Panel 생성 Game Panel
+            알파값 제로
+        [b]. GamePanel의 자식으로 빈 오브젝트를 만든다. Score Group
+            Score Group의 자식으로 이미지와 텍스트를 만든다.
+                Score 스프라이트 적용
+            앵커 좌측 상단
+        [c]. Score Group 복사 Status Group
+            앵커 좌측 하단
+            이미지와 텍스트를 두쌍 더 만든다.
+            플레이어의 체력, 총악, 돈 스프라이트 적용
+        [d]. Score Group 복사 Stage Group
+            앵커 우측 상단
+            스테이지 스프라이트 적용
+            이미지와 텍스트 한 쌍 더 만든다.
+            플레이 시간 스프라이트 적용
+        [e]. Score Group 복사 Enemy Group
+            앵커 우측 하단
+            몬스터 타입 3가지 스프라이트 적용
+
+    #4. 장비 UI
+        [a]. Game Panel의 자식으로 빈 오브젝트를 만든다. Equip Group
+            앵커를 아래로
+        [b]. Equip Group의 자식으로 이미지 생성
+            Panel B 스프라이트 적용
+                앵커를 아래로
+            이미지 자식으로 이미지 생성
+                icon 망치 스프라이트 적용
+                자식 이미지를 복사하고 icon 1 스프라이트 적용
+                    앵커 좌측 상단
+        [c]. 이미지를 4개 더 복사
+            좌우로 위치 조정
+            가운데 3개는 무기 3개, 가장 왼쪽은 왼쪽 클릭, 가장 오른쪽은 수류탄
+
+    #5. 보스 체력 UI
+        [a]. Game Panel의 자식으로 빈 오브젝트를 만든다. Boss Group 
+        [b]. Boss Group의 자식으로 이미지 생성
+            게이지 백 스프라이트 적용
+            앵커 상단으로
+            이미지의 자식으로 이미지 생성 Boss Health Image
+                게이지 프론트 스프라이트 적용
+            이미지의 자식으로 이미지 생성 Boss Image
+                icon 보스 스프라이트 적용
+                    앵커 좌측
+            이미지의 자식으로 이미지 생성 Boss Text
+                보스 텍스트 스프라이트 적용
+        [c]. Boss Health Image의 shift 앵커 좌측
+*/
+
+/*
+15. 3D 쿼터뷰 액션 게임 - UI 배치하기
+
+    #1. 상점 꾸미기
+        [a]. 빈 오브젝트 생성 Item Shop
+            자식으로 3D Cube로 진열대 만들기, 박스 콜라이더 삭제 Table
+        [b]. Material을 만들어서 _Pattern 재질 적용
+            타일링 조절
+        [c]. Item Shop 자식으로 총알, 체력, 수류탄을 나열
+            Itemp Shop 자식으로 빈 오브젝트를 만들어서 아이템들을 자식으로 등록 Goods Group
+        [d]. Item Shop의 자식으로 Luna 객체 등록
+            Mesh Object에 애니메이터 컨트롤러 Luna 등록
+                애니메이션 클립 Idle, Hello 등록
+                    Any State에서 Hello 연결
+                    트리거 doHello 생성
+        [e]. Item Shop의 자식으로 빈 오브젝트 생성 Zone
+            파티클 시스템 컴포넌트 부착
+                쉐이프 Donut, Rotation x 90, 라디우스 2.5, 도너츠 라디우스 0.001, 아크 loop
+                스타트 스피드 0
+                스타트 사이즈 0.2
+                이미션 60
+                색에 그라데이션
+            스피어 콜라이더 부착 트리거
+                태그 Shop
+        [f]. Shop 스크립트 생성 및 Zone에 부착
+        [g]. Item Shop의 자식으로 빈 오브젝트 생성 Spawn Pos A, B, C
+            적절한 위치 지정
+        [h]. Item Shop 복사 Weapon Shop
+            Luna 대신 Ludo 등록
+            Ludo 애니메이터 만들고 MeshObject에 부착
+                애니메이션 클립 Idle, Hello 등록
+            무기 상품 나열
+
+    #2. UI 구축하기
+        [a]. Game Panel에 빈 오브젝트 만들기 Itemp Shop Group
+            캔버스에서 벗어나도록 y축을 아래로 내린다. 
+            사지드 1000 500
+            이미지 컴포넌트 추가
+                Panel A 스프라이트 적용
+                파티클 색상과 비슷하게 색 변경
+        [b]. Itemp Shop Group의 자식으로 버튼 생성 Item Button A
+            사이즈 240 380
+            Panel A 스프라이트 적용
+            Name Text, Price Text 생성
+            Image 추가 Icon Heart 스프라이트 적용
+            Image 추가 하여 동전 스프라이트 적용
+        [c]. Item Button A를 복사 B, C
+            총알, 수류탄 적용
+        [d]. Itemp Shop Group의 자식으로 버튼 생성
+            Icon Close 스프라이트 적용
+        [e]. Itemp Shop Group의 자식으로 이미지 생성
+            Icon Luna 스프라이트 적용
+        [f]. Item Button A의 자식 Text를 복사하여 Item Shop Group 자식으로 두고 앵커를 아래 가득 채움
+            Talk Text
+        [g]. Item Shop Group을 복사하여 Weapon Shop Group으로 만들고 구성을 바꿔준다.
+
+    #3. 상점 출입
+        [a]. Shop 스크립트에서 UI그룹, 애니메이터, 플레이어를 담을 속성을 갖는다.
+            public RectTransform uiGroup; public Animator anim; Player enterPlayer;
+        [b]. 속성을 채운다.
+        [c]. Enter() Exit() 함수 생성
+        [d]. Enter()에서 player 속성을 채워 준다.
+            enterPlayer = player;
+            player을 받기 위해 매개 변수로 Player player
+            플레이어가 들어 왔다면 UI를 띄운다.
+                uiGroup.anchoredPosition = Vector3.zero;
+        [e]. Exit()에서는 UI창을 다시 내린다.
+            uiGroup.anchoredPosition = Vector3.down * 1000;
+            그리고 플레이어가 떠날 때 애니메이션을 출력한다.
+        [f]. Player 스크립트에서 OnTriggerStay에 nearObject 속성에 인접한 무기를 저장하였었다.
+            제어문에 Weapon 이나 혹은 Shop으로 수정한다.
+        [g]. Interaction() 상호 작용 함수에서 Weapon 태그 이외에 Shop 태그일 경우를 추가한다.
+            Shop 스크립트를 받아오고 Enter 함수를 실행 시키면서 자신을 전달해 준다.
+        [h]. 플레이어가 Zone을 나갈 때 OnTriggerExit Shop 태그일 경우 스크립트를 불러와서 Exit() 함수를 호출한다.
+            Shop shop = nearObject.GetComponent<Shop>();
+            shop.Exit();
+            nearObject = null;
+        [i]. Exit Button에 Zone의 Exit() 함수를 연결한다.
+
+    #4. 아이템 구입
+        [a]. Shop 스크립트에서 Buy 함수를 만든다.
+            매개 변수로 인덱스값을 받는다.
+        [b]. 아이템 오브젝트 배열과 아이템 가격 배열, 아이템 스폰 위치 배열, 대사 텍스트, 대사 데이터
+            using UnityEngine.UI;
+            public GameObject[] itemObj; public int[] itemPrice; public Transform[] itemPos; public Text talkText; public string[] talkData;
+        [c]. 아이템과 무기 각각 속성을 채워준다.
+        [d]. Buy 함수에서 지역 변수를 만들어서 가격을 저장한다.
+            int price = itemPrice[index];
+            만약 보유 가격보다 템 가격이 비싸면 이전 코루틴 정지, 그리고 코루틴 함수 호출, 그리고 반환
+        [e]. 코루틴 Talk 함수 생성
+            talkText.text = talkData[1];
+            2초 뒤에 다시 기존 대사 출력
+            talkText.text = talkData[0];
+        [f]. Buy 함수에서 만약 돈이 충분하다면 보유한 돈을 차감하고 지정된 위치에 아이템 인스턴스화
+            enterPlayer.coin -= price;
+            Vector3 ranVec = Vector3.right * Random.Range(-3, 3) + Vector3.forward * Random.Range(-3, 3);
+        [g]. UI 버튼에 Buy 함수를 등록한다.
+
+    #5. 액션 제한
+        [a]. 플레이어 스크립트에서 쇼핑 중임을 체크할 플래그 속성을 갖는다.
+            bool isShop;
+        [b]. 상호작용 함수에서 Shop 스크립트를 가져올 때 true;
+        [c]. 나갈 때 false;
+        [d]. Attack 제어문에 추가
+*/
+
+/*
+16. 3D 쿼터뷰 액션 게임 - UI 로직 연결하기
+
+    #1. 타이틀 카메라
+        [a]. Main Camera를 Game Camera로 명명
+        [b]. Game Camera를 복사하여 Menu Camera로 명명
+        [c]. Game Camera를 비활성화 한다.
+        [d]. Menu Panel 을 활성화 시키고 Game Panel과 Player를 비활성화 한다.
+        [e]. Menu Camera의 follow 스크립트 제거
+            y축과 z축을 조정하여 더 넓은 시야로 바라보도록 한다.
+        [f]. 애니메이션을 만든다. Yoyo Rotation
+            Menu Camera에 부착
+            Yoyo 애니메이션에서 Rotation 프로퍼티 추가
+                y축으로 회전을 준다.
+                loop Time
+
+    #2. 최고 점수 기록
+        [a]. Player 스크립트로 가서 최고 점수를 저장한다.
+        [b]. Awake() 함수에서 PlayerPrefs로 점수를 저장한다.
+            PlayerPrefs.SetInt("MaxScore", 0);
+        [c]. 플레이어를 활성화 한 상태에서 실행
+
+    #3. 변수 세팅
+        [a]. GameManager 만들기
+        [b]. 게임 오브젝트 menuCam; gameCam;
+        [c]. 스크립트 player; boss;
+        [d]. 게임 정보 int stage; float playTime;
+        [e]. 플래그 bool isBattle;
+        [f]. 스테이지 정보 int enemyCntA,B,C;
+        [g]. UI 게임 오브젝트 menuPanel; GamePanel;
+            메뉴의 최대 점수 Text maxScoreTxt; Text scoreTxt; Text stageTxt; Text playTimeTxt;
+            플레이어 정보 Text playerHealthTxt; Text playerAmmoTxt; Text playerCoinTxt;
+        [h]. 이미지 weapon1Img 2,3,R;
+        [i]. 적 정보 텍스트 enemyATxt B, C;
+        [j]. UI위치 RectTransform bossHealthGroup;
+            RectTrasnform bossHealthBar;
+
+    #4. 게임 시작
+        [a]. Menu Camera 세팅
+        [b]. GameManger 스크립트에서 최고 점수를 출력한다.
+            Awake()
+                maxScoreTxt.text = string.Format(("{0:n0}", PlayerPrefs.GetInt("MaxScore"));
+        [c]. 게임 시작 버튼과 연동될 함수 만들기
+            GameStart(), 활성화, 비활성화
+                menuCam, menuPanel 비활성화
+                gameCam, gamePanel, 플레이어 오브젝트 활성화
+        [d]. 버튼에 GameStart함수 등록
+
+    #5. 인게임 UI
+        [a]. Game Camera 세팅
+        [b]. GameManager 스크립트에서 게임 정보를 출력 LateUpdate()
+            현재 점수, 체력, 돈의 수치를 표시
+                scoreTxt.text = string.Format("{0:n0}", player.score);
+                playerHealthTxt.text = string.Format(player.health + " / " + player.maxHealth);
+                playerCoinTxt.text = string.Format("{0:n0}", player.coin);
+            플레이어무기 상태에 따라 탄약 표시
+                player.equipWeapon == null || player.equipWeapon.type == Weapon.Type.Mell
+                else
+                    playerAmmoTxt.text = player.equipWeapon.curAmmo + " / " + player.ammo;
+            무기 UI의 색을 보유 여부에 따라 조정한다.
+                weapon1Img.color = new Color(1, 1, 1, player.hasWeapons[0] ? 1 : 0);
+                    1,2,3
+                    수류탄 R의 경우 0보다 큰지
+            각 몬스터의 수
+                enemyATxt.text = enemyCntA.ToString();
+                    A, B, C
+            스테이지 번호
+                stageTxt.text = "STAGE " + stage;
+            플레이 타임
+                int hour = (int)(playTime / 3600);
+                int min = (int)((playTime - hour * 3600) / 60);
+                int second = (int)(playTime % 60);
+                playTimeTxt.text = string.Format("{0:00}", hour) + ":" + string.Format("{0:00}", min) ":" + string.Format("{0:00}", second);
+            보스의 체력
+                bossHealthBar.localScale = new Vector3((float)boss.curHealth / boss.maxHealth, 1, 1);
+        [c]. Player 스크립트에 현재 점수 속성을 추가 public int score;
+            equipWeapon 속성을 public으로 수정
+        [d]. Update 함수에서 전투 중일 때 시간을 짆행 시킨다.
+            if(isBattle)
+                playTime += Time.deltaTime;
+*/
+
+/*
+17. 3D 쿼터뷰 액션 게임 - 게임 완성하기
+
+    #1. 스테이지 관리
+        [a]. 게임 매니저 스크립트에 스테이지 관련 함수를 만든다.
+            StageStart() StageEnd()
+        [b]. 씬에서 Zone을 복사하여 스테이지 시작 Zone으로 만든다. Start Zone
+            스크립트 제거, 태그 제거
+            Start Zone의 자식으로 3D 텍스트를 만든다. Next Stage
+        [c]. StartZone 스크립트 생성 및 부착
+        [d]. StartZone은 게임 매니저 속성을 받아서 플레이어와의 충돌에서 스테이지를 시작한다.
+            public GameManager manager;
+            OnTriggerEnter
+                태그가 Player일 경우 게임 매니저의 StageStart() 함수 호출
+        [e]. 다시 게임 매니저에서 코루틴 함수 InBattle()을 만든다.
+            5초간 쉬었다가 StageEnd() 호출
+            StageStart함수에서 isBattle true로, 코루틴 호출
+            StageEnd는 false
+        [f]. 전투가 시작될 때 샵과 시작 존을 비활성화 하기 위해 속성으로 갖는다.
+            public GameObject itemShop; public GameObject weaponShop; public GameObject startZone;
+        [g]. StageStart에서 비활성화
+            StageEnd()에서 활성화 그리고 stage++; 그리고 플레이어 위치를 원위치로
+                player.transform.position = Vector3.up * 0.8f;
+
+    #2. 몬스터 프리팹
+        [a]. Enemy 스크립트에 점수, 동전 프리팹 배열을 속성으로 만든다.
+            public int score; public GameObject[] coins;
+        [b]. 몬스터가 피격을 받아 죽을 때 플레이어 스크립트를 받아와 자신의 점수를 넘겨 준다.
+            Player player = target.GetComponent<Player>();
+            player.score += score;
+            랜덤한 값을 받아서 랜덤한 코인을 만든다.
+                int ranCoin = 랜덤
+                Instantiate(coins[ranCoin], 위치, Quaternion.identity);
+            Boss도 걍 죽임
+        [c]. 씬에서 몬스터 별로 자신의 점수를 채운다.
+        [d]. 위치값 초기화 한 뒤 프리팹화 한다.
+
+    #3. 몬스터 관리
+        [a]. Start Zone을 4개 복사한다. 콜라이더, 스크립트 제거 Enemy Respawn Zone
+            동서남북으로 위치시킨다.
+            Enemy Zone Group에 넣어 준다.
+        [b]. 게임 매니저에 Transform[] 속성을 만든다. enemyZones;
+            몬스터 프리팹 배열도 만든다. enemies;
+            스테이지에 출현하는 몬스터 리스트 public List<int> enemyList;
+        [c]. Awake() 에서 리스트 초기화
+            enemyList = new List<int>();
+        [d]. InBattle 함수에서 리스트를 채워 준다.
+            반복문으로 현재 stage의 값 *2 만큼 반복하면서 랜덤값을 만들고 리스트에 랜덤값을 저장한다.
+                enemyList.Add(ran);
+            그리고 바로 소환 
+                while(enemyList.Count > 0)
+                    int ranZone = 랜덤
+                    GameObject instantEnemy = Instantiate(enemies[enemyList[0]], enemyZones[ranZone].position, ...);
+                    Enemy enemy = instantitate.GetComponent<Enemy>();
+                    enemy.target = player.transform;
+                    enemyList.RemoveAt(0);
+                    yield 4초
+            StageEnd() 호출 삭제
+        [e]. LateUpdate에서 보스의 체력바를 띄우는 로직에 boss가 null이 아닐 때만 표시하도록 한다.
+        [f]. Enemy Respawn Zone을 비활성화 시켜 놓는다.
+        [g]. StageStart 함수에서 enemyZones를 순회하며 소환 존을 활성화 한다.
+            foreach(Transform zone in enemyZones)
+        [h]. StageEnd 함수에서는 반대로 enemyZones를 순회하며 비활성화
+        [i]. 몬스터 수를 출력하는 UI를 위해 리스트에 몬스터 값을 채울 때 수를 증가 시켜준다.
+            switch(ran)
+                enemyCntA++;...
+        [j]. 5단위의 스테이지 번호 마다 보스를 소환한다. 아닐 때는 일반 몹
+            if(stage % 5 == 0)
+                몬스터 처럼 보스 소환
+                    GameObject instantEnemy = Instantiate(enemies[3]...)
+                    ...
+                    boss = instantEmeny.GetCompoenent<Boss>();
+        [k]. 몬스터가 다 출력되고 남은 몬스터를 확인하는 반복문을 만든다.
+            while(enemyCntA + enemyCntB... > 0)
+                yield ...
+            반복문 탈출 뒤에 4초 쉬었다가 StageEnd함수 호출
+        [l]. Enemy 스크립트에 게임 매니저 속성을 만든다.
+            몬스터가 죽을 때 switch문으로 자신의 타입을 토대로 게임 매니저의 몬스터 수를 차감한다.
+                manager.enemyCntA--;...
+        [m]. 게임 매니저에서 몬스터를 소환할 때 자기 자신을 Enemy 스크립트의 매니저 속성으로 보낸다.
+        [n]. 게임 매니저에서 보스를 잡고 나면 체력바를 사라지게 한다.
+            LateUpdate에서 체력바를 표시하는 로직에 보스가 소환될 때 앵커 위치를 내려주고 아니면 올려준다.
+                bossHealthGroup.anchoredPosition = Vector3.down * 30;
+                ...
+        [o]. Boss는 잡히고 나면 다시 null이 되어야 하므로 스테이지 종료를 호출하기 바로 전에 null을 배정한다.
+
+    #4. 게임 오버
+        [a]. 게임 매니저에 게임 오버 함수 생성
+        [b]. 플레이어 스크립트에서 OnDamage 코루틴 함수로 간다.
+            if(health <= 0) 제어문을 만들고 OnDie() 함수를 호출한다.
+        [c]. 플레이어 스크립트에 OnDie() 함수를 만든다.
+            죽음 애니메이션을 출력한다.
+            isDead라는 속성을 만든다. 그리고 true;
+            각 각의 액션에 제어문을 추가한다.
+        [d]. 플레이어 애니메이션 클립으로 Die를 등록 doDie 트리거 생성
+        [e]. 플레이어 스크립트에 속성으로 게임 매니저를 만든다.
+            OnDie에서 게임 매니저의 GameOver() 함수를 호출한다.
+        [f]. 캔버스의 자식 중 Menu Panel을 복사한다. GameOver Panel
+            Title은 지운다.
+            버튼 텍스트는 Main Title로 지정
+            새로운 텍스트를 만들고 Best라 입력, 만약 현재 점수가 최고 점수를 넘겼을 때 띄움
+                일단 비활성화
+            새로운 텍스트 만들고 GAME OVER 작성
+        [g]. 게임 매니저에서 속성으로 게임 오버 판넬을 받아온다.
+            Text로 게임 오버 판넬에 띄울 최종 점수와 최고점수 확인 속성을 추가
+                public Text curScoreTxt; public Text bestTxt;
+        [h]. 게임 오버 함수에서 게임오버 판넬을 활성화 하고 게임 판넬을 비활성화
+            현재 점수를 출력
+                curScoreTxt.text = scoreTxt.text;
+            최고점수를 받아와서 비교
+                int maxScore = PlayerPrefs.GetInt("MaxScore");
+                if(player.score > maxScore)
+                    bestText.gameObject.활성화
+                    PlayerPrefs의 최고 점수 저장
+        [i]. Restart() 함수 생성
+            씬을 로드한다.
+*/
