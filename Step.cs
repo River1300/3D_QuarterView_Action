@@ -251,7 +251,7 @@
         [i]. 무기를 교체하는 동안에 움직임의 제약을 걸기 위해 교체 중임을 체크할 불 속성을 만든다.
             bool isSwap;
         [j]. 코루틴 함수를 만들어서 무기를 교체하고 0.4초 뒤에 false 이전에는 true
-        [k]. 현재 사용중이 무기의 인덱스를 속성으로 갖는다.
+        [k]. 현재 사용중인 무기의 인덱스를 속성으로 갖는다.
             int equipWeaponIndex = 1;
         [l]. 없는 무기는 교체해서는 안되고 동일한 무기는 교체할 필요가 없다.
             if(sDown1 && (!hasWeapons[0] || equipWeaponIndex== 0)) return;
