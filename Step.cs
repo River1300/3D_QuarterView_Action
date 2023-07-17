@@ -295,7 +295,7 @@
     #4. 공전 구현
         [a]. Orbit 스크립트 작성하고 동서남북 빈 오브젝트에 각각 부착
         [b]. 속성으로 플레이어 위치와 공전 속도, 플레이어와 수류탄 간의 거리를 갖는다.
-            public Transform target; public float orbitSpace; Vector3 offSet;
+            public Transform target; public float orbitSpeed; Vector3 offSet;
         [c]. Update함수에서 플레이어를 기준으로 주위를 돈다.
             transform.RotateAround(target.position, Vector3.up, orbitSpeed * Time.deltaTime);
         [d]. 이때 RotateAround함수가 수류탄의 위치를 지정하여 플레이어 움직임을 똑바로 따라가지 못하고 있다.
