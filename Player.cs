@@ -27,18 +27,21 @@ public class Player : MonoBehaviour
     bool sDown1;
     bool sDown2;
     bool sDown3;
+    bool fDown;
 
     bool isJump;
     bool isDodge;
     bool isSwap;
+    bool isFireReady;
 
     float hAxis;
     float vAxis;
+    float fireDelay;
 
     int equipWeaponIndex = -1;
 
     GameObject nearObject;
-    GameObject equipWeapon;
+    Weapon equipWeapon;
 
     Vector3 moveVec;
     Vector3 dodgeVec;
@@ -50,6 +53,8 @@ public class Player : MonoBehaviour
     {
         anim = GetComponentInChildren<Animator>();
         rigid = GetComponent<Rigidbody>();
+        
+        fireDelay = 2;
     }
 
     void Update()
@@ -61,6 +66,7 @@ public class Player : MonoBehaviour
         Jump();
         Dodge();
         Swap();
+        Attack();
     }
 
     void InputSystem()
@@ -73,6 +79,7 @@ public class Player : MonoBehaviour
         sDown1 = Keyboard.current.digit1Key.wasPressedThisFrame;
         sDown2 = Keyboard.current.digit2Key.wasPressedThisFrame;
         sDown3 = Keyboard.current.digit3Key.wasPressedThisFrame;
+        fDown = Mouse.current.leftButton.isPressed;
     }
 
     void Interaction()
@@ -155,10 +162,10 @@ public class Player : MonoBehaviour
 
         if((sDown1 || sDown2 || sDown3) && !isJump && !isDodge)
         {
-            if(equipWeapon != null) equipWeapon.SetActive(false);
+            if(equipWeapon != null) equipWeapon.gameObject.SetActive(false);
 
-            equipWeapon = weapons[weaponIndex];
-            equipWeapon.SetActive(true);
+            equipWeapon = weapons[weaponIndex].GetComponent<Weapon>();
+            equipWeapon.gameObject.SetActive(true);
             equipWeaponIndex = weaponIndex;
             anim.SetTrigger("doSwap");
             StartCoroutine(SwapRoutine());
@@ -172,6 +179,21 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.4f);
 
         isSwap = false;
+    }
+
+    void Attack()
+    {
+        if(equipWeapon == null) return;
+
+        fireDelay += Time.deltaTime;
+        isFireReady = equipWeapon.rate < fireDelay;
+
+        if(fDown && isFireReady &&!isJump && !isDodge && !isSwap)
+        {
+            equipWeapon.Use();
+            anim.SetTrigger("doSwing");
+            fireDelay = 0;
+        }
     }
 
     void OnCollisionEnter(Collision other)
