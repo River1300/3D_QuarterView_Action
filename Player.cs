@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
+    public Camera followCamera;
     public GameObject[] grenades;
     public GameObject[] weapons;
     public bool[] hasWeapon;
@@ -28,11 +29,14 @@ public class Player : MonoBehaviour
     bool sDown2;
     bool sDown3;
     bool fDown;
+    bool rDown;
 
     bool isJump;
     bool isDodge;
     bool isSwap;
     bool isFireReady;
+    bool isReload;
+    bool isBoarder;
 
     float hAxis;
     float vAxis;
@@ -57,6 +61,12 @@ public class Player : MonoBehaviour
         fireDelay = 2;
     }
 
+    void FixedUpdate()
+    {
+        FreezeRotation();
+        StopToWall();
+    }
+
     void Update()
     {
         InputSystem();
@@ -67,6 +77,19 @@ public class Player : MonoBehaviour
         Dodge();
         Swap();
         Attack();
+        Reload();
+    }
+
+    void FreezeRotation()
+    {
+        rigid.angularVelocity = Vector3.zero;
+    }
+
+    void StopToWall()
+    {
+        Debug.DrawRay(transform.position, transform.forward * 5, Color.green);
+
+        isBoarder = Physics.Raycast(transform.position, transform.forward, 5, LayerMask.GetMask("Wall"));
     }
 
     void InputSystem()
@@ -80,6 +103,7 @@ public class Player : MonoBehaviour
         sDown2 = Keyboard.current.digit2Key.wasPressedThisFrame;
         sDown3 = Keyboard.current.digit3Key.wasPressedThisFrame;
         fDown = Mouse.current.leftButton.isPressed;
+        rDown = Keyboard.current.rKey.wasPressedThisFrame;
     }
 
     void Interaction()
@@ -102,7 +126,8 @@ public class Player : MonoBehaviour
 
         if(isDodge) moveVec = dodgeVec;
 
-        transform.position += moveVec * speed * (wDown ? 0.3f : 1f) * Time.deltaTime;
+        if(!isBoarder)
+            transform.position += moveVec * speed * (wDown ? 0.3f : 1f) * Time.deltaTime;
 
         anim.SetBool("isRun", moveVec != Vector3.zero);
         anim.SetBool("isWalk", wDown);
@@ -111,6 +136,18 @@ public class Player : MonoBehaviour
     void Turn()
     {
         transform.LookAt(transform.position + moveVec);
+
+        if(fDown)
+        {
+            Ray ray = followCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit rayHit;
+            if(Physics.Raycast(ray, out rayHit, 100))
+            {
+                Vector3 nextVec = rayHit.point - transform.position;
+                nextVec.y = 0;
+                transform.LookAt(transform.position + nextVec);
+            }
+        }
     }
 
     void Jump()
@@ -191,9 +228,32 @@ public class Player : MonoBehaviour
         if(fDown && isFireReady &&!isJump && !isDodge && !isSwap)
         {
             equipWeapon.Use();
-            anim.SetTrigger("doSwing");
+            anim.SetTrigger(equipWeapon.type == Weapon.Type.Melee ? "doSwing" : "doShot");
             fireDelay = 0;
         }
+    }
+
+    void Reload()
+    {
+        if(equipWeapon == null) return;
+        if(equipWeapon.type == Weapon.Type.Melee) return;
+        if(ammo <= 0) return;
+
+        if(rDown && !isReload && !isJump && !isDodge && !isSwap && equipWeapon.maxAmmo != equipWeapon.curAmmo)
+        {
+            isReload = true;
+            anim.SetTrigger("doReload");
+            Invoke("ReloadOut", 0.5f);
+        }
+    }
+
+    void ReloadOut()
+    {
+        int reAmmo = Mathf.Min(equipWeapon.maxAmmo - equipWeapon.curAmmo, ammo);
+        equipWeapon.curAmmo += reAmmo;
+        ammo -= reAmmo;
+
+        isReload = false;
     }
 
     void OnCollisionEnter(Collision other)
@@ -241,7 +301,6 @@ public class Player : MonoBehaviour
         if(other.tag == "Weapon")
         {
             nearObject = other.gameObject;
-            Debug.Log(nearObject.name + "Stay");
         }
     }
 
