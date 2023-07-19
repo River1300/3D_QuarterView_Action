@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 public class Player : MonoBehaviour
 {
     public Camera followCamera;
+    public GameObject grenadeObj;
     public GameObject[] grenades;
     public GameObject[] weapons;
     public bool[] hasWeapon;
@@ -30,6 +31,7 @@ public class Player : MonoBehaviour
     bool sDown3;
     bool fDown;
     bool rDown;
+    bool gDown;
 
     bool isJump;
     bool isDodge;
@@ -76,6 +78,7 @@ public class Player : MonoBehaviour
         Jump();
         Dodge();
         Swap();
+        Grenade();
         Attack();
         Reload();
     }
@@ -104,6 +107,7 @@ public class Player : MonoBehaviour
         sDown3 = Keyboard.current.digit3Key.wasPressedThisFrame;
         fDown = Mouse.current.leftButton.isPressed;
         rDown = Keyboard.current.rKey.wasPressedThisFrame;
+        gDown = Mouse.current.rightButton.wasPressedThisFrame;
     }
 
     void Interaction()
@@ -216,6 +220,30 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.4f);
 
         isSwap = false;
+    }
+
+    void Grenade()
+    {
+        if(grenade == 0) return;
+
+        if(gDown && !isSwap && !isReload && !isDodge)
+        {
+            Ray ray = followCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit rayHit;
+            if(Physics.Raycast(ray, out rayHit, 100))
+            {
+                Vector3 nextVec = rayHit.point - transform.position;
+                nextVec.y = 30;
+
+                GameObject instanceGrenade = Instantiate(grenadeObj, transform.position, transform.rotation);
+                Rigidbody rigidGrenade = instanceGrenade.GetComponent<Rigidbody>();
+                rigidGrenade.AddForce(nextVec * 2f, ForceMode.Impulse);
+                rigidGrenade.AddTorque(Vector3.back * 10, ForceMode.Impulse);
+
+                grenade--;
+                grenades[grenade].SetActive(false);
+            }
+        }
     }
 
     void Attack()
