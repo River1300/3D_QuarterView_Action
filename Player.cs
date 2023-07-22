@@ -39,6 +39,7 @@ public class Player : MonoBehaviour
     bool isFireReady;
     bool isReload;
     bool isBoarder;
+    bool isDamage;
 
     float hAxis;
     float vAxis;
@@ -54,11 +55,13 @@ public class Player : MonoBehaviour
 
     Animator anim;
     Rigidbody rigid;
+    MeshRenderer[] meshs;
 
     void Awake()
     {
         anim = GetComponentInChildren<Animator>();
         rigid = GetComponent<Rigidbody>();
+        meshs = GetComponentsInChildren<MeshRenderer>();
         
         fireDelay = 2;
     }
@@ -284,6 +287,25 @@ public class Player : MonoBehaviour
         isReload = false;
     }
 
+    IEnumerator OnDamage()
+    {
+        isDamage = true;
+
+        foreach(MeshRenderer mesh in meshs)
+        {
+            mesh.material.color = Color.yellow;
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        foreach(MeshRenderer mesh in meshs)
+        {
+            mesh.material.color = Color.white;
+        }
+
+        isDamage = false;
+    }
+
     void OnCollisionEnter(Collision other)
     {
         if(other.gameObject.tag == "Floor")
@@ -321,6 +343,17 @@ public class Player : MonoBehaviour
             }
 
             Destroy(other.gameObject);
+        }
+        else if(other.tag == "EnemyBullet")
+        {
+            if(isDamage) return;
+
+            Bullet enemyBullet = other.gameObject.GetComponent<Bullet>();
+            health -= enemyBullet.damage;
+
+            if(other.GetComponent<Rigidbody>() != null) Destroy(other.gameObject);
+
+            StartCoroutine(OnDamage());
         }
     }
 

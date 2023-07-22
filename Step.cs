@@ -665,7 +665,7 @@
         [a]. Player 스크립트에서 Item과 충돌하는 것 이외에 EnemyBullet과 충돌하는 경우를 추가한다.
         [b]. 충돌한 적 총알로 부터 총알 스크립트를 받아와서 health를 차감한다.
         [c]. 피격 코루틴 함수를 만든다. OnDamage()
-            피격 직후 일정 시간의 무적 타임이 필요하므로 무적타입 bool 속성을 갖는다. bool isDamage;
+            피격 직후 일정 시간의 무적 타임이 필요하므로 무적타임 bool 속성을 갖는다. bool isDamage;
             처음 피격을 당하면 true;
             1초간 무적시간으로 지정하고 false;
         [d]. 적 총알과의 충돌 로직은 isDamage가 false일 때만 실행하도록 제어문을 만든다.
@@ -675,8 +675,8 @@
         [f]. isDamage 가 true일 때 반복문으로 Player의 파츠를 순회하며 색을 바꿔준다.
             foreach(MeshRenderer mesh in meshs)
                 mesh.material.color = Color.yellow;
-            일전 시간이 지나고 원상 복구 한다.
-        [g].빈 오브젝트를 만든고 박스 콜라이더를 EnemyBullet, Bullet 스크립트를 부착한다. EnemyBullet
+            일정 시간이 지나고 원상 복구 한다.
+        [g].빈 오브젝트를 만든고 박스 콜라이더를 부착, Bullet 스크립트를 부착한다. EnemyBullet
 
     #2. 몬스터 움직임 보완
         [a]. Enemy 스크립트에서 Update 함수로 플레이어를 추적하였는데, 이때 제어문을 수정한다.
@@ -699,7 +699,7 @@
             플레이어가 감지되었다면 구조체에 길이가 들어올 것이고 몬스터가 공격 중이 아니라면 공격을 하면된다.
             if(rayHits.Length > 0 && !isAttack)
         [f]. 공격 코루틴 함수를 만든다. Attack()
-            먼저 정지를 한 다음, 애니메이션과 함꼐 공격 범위를 활성화하여 공격한다.
+            먼저 정지를 한 다음, 애니메이션과 함께 공격 범위를 활성화하여 공격한다.
                 isChase = false; isAttack = true; anim.SetBool(...); meleeArea.enabled = true;
             공격 애니메이션 출력 중 때리는 타이밍에 공격 범위를 활성화 하고
             잠시 쉬었다가 활성화 하였던 것을 비활성화 하고 다시 추적한다.
@@ -739,7 +739,7 @@
             Tag와 Layer도 지정해 준다.
         [f]. Missile을 프리팹화 한다.
         [g]. Enemy 애니메이터 컨트롤러를 복사하여 C로 지정한다.
-            애니메이션 스테이드에 클립을 교체해 준다.
+            애니메이션 스테이트에 클립을 교체해 준다.
         [h]. 스크립트의 속성을 채워 준다.
         [i]. 미사일 프리팹을 담아둘 속성을 갖는다.
             public GameObject bullet;
