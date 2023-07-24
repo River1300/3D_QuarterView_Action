@@ -5,25 +5,24 @@ using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
-    public enum Type { A, B, C }
+    public enum Type { A, B, C, D }
+    [Header("# Info")]
     public Type type;
-
-    public Transform target;
-    public GameObject bullet;
-
     public int maxHealth;
     public int curHealth;
-
-    bool isChase;
-
+    [Header("# Object")]
+    public Transform target;
+    public GameObject bullet;
     public BoxCollider meleeArea;
+    [Header("# Child")]
     public bool isAttack;
-
-    NavMeshAgent nav;
-    Rigidbody rigid;
-    BoxCollider boxCollider;
-    Animator anim;
-    Material mat;
+    public bool isChase;
+    public bool isDead;
+    public NavMeshAgent nav;
+    public Rigidbody rigid;
+    public BoxCollider boxCollider;
+    public Animator anim;
+    public MeshRenderer[] meshs;
 
     void Awake()
     {
@@ -31,9 +30,10 @@ public class Enemy : MonoBehaviour
         rigid = GetComponent<Rigidbody>();
         boxCollider = GetComponent<BoxCollider>();
         anim = GetComponentInChildren<Animator>();
-        mat = GetComponentInChildren<MeshRenderer>().material;
+        meshs = GetComponentsInChildren<MeshRenderer>();
 
-        Invoke("ChaseStart", 3.0f);
+        if(type != Type.D)
+            Invoke("ChaseStart", 3.0f);
     }
 
     void FixedUpdate()
@@ -44,7 +44,7 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
-        if(nav.enabled)
+        if(type != Type.D && nav.enabled)
         {
             nav.SetDestination(target.position);
             nav.isStopped = !isChase;
@@ -67,6 +67,9 @@ public class Enemy : MonoBehaviour
 
     void Targeting()
     {
+        if(isDead) return;
+        if(type == Type.D) return;
+
         float targetRadius = 0.0f;
         float targetRange = 0.0f;
         RaycastHit[] rayHit;
@@ -79,11 +82,11 @@ public class Enemy : MonoBehaviour
                 break;
             case Type.B:
                 targetRadius = 1.0f;
-                targetRange = 12.0f;
+                targetRange = 30.0f;
                 break;
             case Type.C:
                 targetRadius = 0.5f;
-                targetRange = 25.0f;
+                targetRange = 45.0f;
                 break;
         }
         rayHit = Physics.SphereCastAll(
@@ -105,17 +108,17 @@ public class Enemy : MonoBehaviour
         switch(type)
         {
             case Type.A:
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(0.75f);
                 meleeArea.enabled = true;
                 yield return new WaitForSeconds(1.0f);
                 meleeArea.enabled = false;
                 yield return new WaitForSeconds(1.0f);
                 break;
             case Type.B:
-                yield return new WaitForSeconds(0.1f);
-                rigid.AddForce(transform.forward * 25, ForceMode.Impulse);
+                yield return new WaitForSeconds(0.55f);
+                rigid.AddForce(transform.forward * 100, ForceMode.Impulse);
                 meleeArea.enabled = true;
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(1.0f);
                 rigid.velocity = Vector3.zero;
                 meleeArea.enabled = false;
                 yield return new WaitForSeconds(2.0f);
@@ -124,12 +127,12 @@ public class Enemy : MonoBehaviour
                 yield return new WaitForSeconds(0.5f);
                 GameObject enemyBullet = Instantiate(bullet, transform.position, transform.rotation);
                 Rigidbody rigidBullet = enemyBullet.GetComponent<Rigidbody>();
-                rigid.velocity = transform.forward * 30.0f;
+                rigidBullet.velocity = transform.forward * 30.0f;
                 yield return new WaitForSeconds(2.5f);
                 break;
         }
 
-        anim.SetBool("isAttak", false);
+        anim.SetBool("isAttack", false);
         isAttack = false;
         isChase = true;
     }
@@ -147,17 +150,27 @@ public class Enemy : MonoBehaviour
 
     IEnumerator OnDamaged(Vector3 vec, bool isGrenade)
     {
-        mat.color = Color.red;
+        foreach(MeshRenderer mesh in meshs)
+        {
+            mesh.material.color = Color.red;
+        }
 
         yield return new WaitForSeconds(0.3f);
 
         if(curHealth > 0)
         {
-            mat.color = Color.white;
+            foreach(MeshRenderer mesh in meshs)
+            {
+                mesh.material.color = Color.white;
+            }
         }
         else
         {
-            mat.color = Color.gray;
+            foreach(MeshRenderer mesh in meshs)
+            {
+                mesh.material.color = Color.gray;
+            }
+            isDead = true;
             isChase = false;
             nav.enabled = false;
 

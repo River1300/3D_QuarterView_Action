@@ -287,9 +287,14 @@ public class Player : MonoBehaviour
         isReload = false;
     }
 
-    IEnumerator OnDamage()
+    IEnumerator OnDamage(bool isBossAtk)
     {
         isDamage = true;
+
+        if(isBossAtk)
+        {
+            rigid.AddForce(transform.forward * -20.0f, ForceMode.Impulse);
+        }
 
         foreach(MeshRenderer mesh in meshs)
         {
@@ -297,6 +302,11 @@ public class Player : MonoBehaviour
         }
 
         yield return new WaitForSeconds(1.0f);
+
+        if(isBossAtk)
+        {
+            rigid.velocity = Vector3.zero;
+        }
 
         foreach(MeshRenderer mesh in meshs)
         {
@@ -346,14 +356,16 @@ public class Player : MonoBehaviour
         }
         else if(other.tag == "EnemyBullet")
         {
-            if(isDamage) return;
+            if(!isDamage)
+            {
+                Bullet enemyBullet = other.gameObject.GetComponent<Bullet>();
+                health -= enemyBullet.damage;
 
-            Bullet enemyBullet = other.gameObject.GetComponent<Bullet>();
-            health -= enemyBullet.damage;
+                bool isBossAtk = other.name == "Boss Melee Area";
 
+                StartCoroutine(OnDamage(isBossAtk));
+            }
             if(other.GetComponent<Rigidbody>() != null) Destroy(other.gameObject);
-
-            StartCoroutine(OnDamage());
         }
     }
 

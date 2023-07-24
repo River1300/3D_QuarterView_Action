@@ -773,6 +773,10 @@
             각각의 트리거 생성
         [c]. Enemy D에 리지드바디와 박스 콜라이더, 네비게이션 부착
             Nav Speed 40, Angular Speed 0, Acceleration 60
+            보스몹 크기가 줄어들때 해결법
+            원인 : Animation에 scale이 1,1,1로 설정 되있는 경우에 그럼
+            해결법 : 제일 간단한 해결법중 하나로 보스몹 오브젝트 안에 empty object 하나 만든 다음
+            object scale을 3으로 변경해주고 자식으로 Mesh Object를  두면 다시 커짐.
         [d]. 보스의 귀에서 미사일을 발사하기 위해 위치를 잡아 준다.
             Enemy D의 자식으로 빈 오브젝트를 만들고 미사일이 발사될 위치로 이동 시킨다.
                 Missile Port A, B
@@ -882,7 +886,7 @@
         [h]. RockShot 코루틴 함수에서 기를 모으는 동안 방향이 고정되어야 함으로 isLook false
             애니메이션이 실행 되고 바위를 인스턴스화
                 Instantiate(bullet, transform.position, transform.rotation);
-            착지 후에 true;
+            발사 후에 true;
         [i]. Taunt 코루틴 함수에서 내려찍을 위치로 점프한다.
             tauntVec = target.position + lookVec;
             isLook = false;
