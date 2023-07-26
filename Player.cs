@@ -40,6 +40,7 @@ public class Player : MonoBehaviour
     bool isReload;
     bool isBoarder;
     bool isDamage;
+    bool isShop;
 
     float hAxis;
     float vAxis;
@@ -123,6 +124,12 @@ public class Player : MonoBehaviour
                 int weaponIndex = item.value;
                 hasWeapon[weaponIndex] = true;
                 Destroy(nearObject);
+            }
+            else if(nearObject.tag == "Shop")
+            {
+                Shop shop = nearObject.GetComponent<Shop>();
+                shop.Enter(this);
+                isShop = true;
             }
         }
     }
@@ -251,7 +258,7 @@ public class Player : MonoBehaviour
 
     void Attack()
     {
-        if(equipWeapon == null) return;
+        if(equipWeapon == null || isShop) return;
 
         fireDelay += Time.deltaTime;
         isFireReady = equipWeapon.rate < fireDelay;
@@ -371,7 +378,7 @@ public class Player : MonoBehaviour
 
     void OnTriggerStay(Collider other)
     {
-        if(other.tag == "Weapon")
+        if(other.tag == "Weapon" || other.tag == "Shop")
         {
             nearObject = other.gameObject;
         }
@@ -383,6 +390,14 @@ public class Player : MonoBehaviour
         {
             nearObject = null;
             Debug.Log("Exit");
+        }
+        if(other.tag == "Shop")
+        {
+            Shop shop = other.GetComponent<Shop>();
+            shop.Exit();
+
+            isShop = false;
+            nearObject = null;
         }
     }
 }
