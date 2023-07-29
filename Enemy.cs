@@ -10,7 +10,10 @@ public class Enemy : MonoBehaviour
     public Type type;
     public int maxHealth;
     public int curHealth;
+    public int score;
     [Header("# Object")]
+    public GameManager manager;
+    public GameObject[] coins;
     public Transform target;
     public GameObject bullet;
     public BoxCollider meleeArea;
@@ -53,10 +56,11 @@ public class Enemy : MonoBehaviour
 
     void FreezeVelocity()
     {
-        if(!isChase) return;
-
-        rigid.velocity = Vector3.zero;
-        rigid.angularVelocity = Vector3.zero;
+        if(isChase)
+        {
+            rigid.velocity = Vector3.zero;
+            rigid.angularVelocity = Vector3.zero;
+        }
     }
 
     void ChaseStart()
@@ -150,51 +154,78 @@ public class Enemy : MonoBehaviour
 
     IEnumerator OnDamaged(Vector3 vec, bool isGrenade)
     {
-        foreach(MeshRenderer mesh in meshs)
-        {
-            mesh.material.color = Color.red;
-        }
-
-        yield return new WaitForSeconds(0.3f);
-
-        if(curHealth > 0)
+        if(!isDead)
         {
             foreach(MeshRenderer mesh in meshs)
             {
-                mesh.material.color = Color.white;
+                mesh.material.color = Color.red;
             }
-        }
-        else
-        {
-            foreach(MeshRenderer mesh in meshs)
-            {
-                mesh.material.color = Color.gray;
-            }
-            isDead = true;
-            isChase = false;
-            nav.enabled = false;
 
-            anim.SetBool("isWalk", false);
-            anim.SetTrigger("doDie");
-            gameObject.layer = 13;
-
-            if(isGrenade)
+            if(curHealth > 0)
             {
-                rigid.AddForce(vec * 5, ForceMode.Impulse);
-                rigid.freezeRotation = false;
-                rigid.AddTorque(vec * 15, ForceMode.Impulse);
+                yield return new WaitForSeconds(0.3f);
+
+                foreach(MeshRenderer mesh in meshs)
+                {
+                    mesh.material.color = Color.white;
+                }
             }
             else
             {
-                rigid.AddForce(vec * 5, ForceMode.Impulse);
+                foreach(MeshRenderer mesh in meshs)
+                {
+                    mesh.material.color = Color.gray;
+                }
+                isDead = true;
+                isChase = false;
+                nav.enabled = false;
+
+                Player player = target.GetComponent<Player>();
+                player.score += score;
+
+                int ranCoin = Random.Range(0, 3);
+                Instantiate(coins[ranCoin], transform.position, Quaternion.identity);
+
+                anim.SetBool("isWalk", false);
+                anim.SetTrigger("doDie");
+                gameObject.layer = 13;
+
+                if(isGrenade)
+                {
+                    rigid.AddForce(vec * 5, ForceMode.Impulse);
+                    rigid.freezeRotation = false;
+                    rigid.AddTorque(vec * 15, ForceMode.Impulse);
+                }
+                else
+                {
+                    rigid.AddForce(vec * 5, ForceMode.Impulse);
+                }
+                
+                switch(type)
+                {
+                case Enemy.Type.A:
+                    manager.enemyCntA--;
+                    break;
+                case Enemy.Type.B:
+                    manager.enemyCntB--;
+                    break;
+                case Enemy.Type.C:
+                    manager.enemyCntC--;
+                    break;
+                case Enemy.Type.D:
+                    manager.enemyCntD--;
+                    break;
+                }
+
+                Destroy(gameObject, 4.0f);
             }
-            
-            Destroy(gameObject, 4.0f);
         }
     }
 
     void OnTriggerEnter(Collider other)
     {
+        if(isDead) return;
+
         Vector3 reactVec = transform.position - other.transform.position;
         reactVec = reactVec.normalized;
         reactVec += Vector3.up * 3f;

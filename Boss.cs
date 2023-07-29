@@ -17,7 +17,6 @@ public class Boss : Enemy
     void Awake()
     {
         nav = GetComponent<NavMeshAgent>();
-        rigid = GetComponent<Rigidbody>();
         boxCollider = GetComponent<BoxCollider>();
         anim = GetComponentInChildren<Animator>();
         meshs = GetComponentsInChildren<MeshRenderer>();
@@ -41,11 +40,9 @@ public class Boss : Enemy
 
             lookVec = new Vector3(hVec, 0, vVec) * 3.0f;
             transform.LookAt(target.position + lookVec);
-            rigid.isKinematic = true;
         }
         else
         {
-            rigid.isKinematic = false;
             nav.SetDestination(tauntVec);
         }
     }
@@ -103,10 +100,11 @@ public class Boss : Enemy
     IEnumerator Taunt()
     {
         anim.SetTrigger("doTaunt");
-        tauntVec = target.position + lookVec;
         isLook = false;
         nav.isStopped = false;
         boxCollider.enabled = false;
+
+        tauntVec = target.position + lookVec;
 
         yield return new WaitForSeconds(1.5f);
         meleeArea.enabled = true;

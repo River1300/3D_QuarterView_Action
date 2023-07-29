@@ -12,3 +12,6 @@ Boss.cs.meta
 BossMissile.cs.meta
 BossRock.cs.meta
 Shop.cs.meta
+GameManager.cs.meta
+Spawn.cs.meta
+StartZone.cs.meta

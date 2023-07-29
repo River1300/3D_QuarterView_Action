@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
+    public GameManager manager;
     public Camera followCamera;
     public GameObject grenadeObj;
     public GameObject[] grenades;
@@ -19,6 +20,7 @@ public class Player : MonoBehaviour
     public int grenade;
     public int maxCoin;
     public int coin;
+    public int score;
 
     public float speed;
     public float jumpPower;
@@ -41,6 +43,7 @@ public class Player : MonoBehaviour
     bool isBoarder;
     bool isDamage;
     bool isShop;
+    bool isDead;
 
     float hAxis;
     float vAxis;
@@ -49,7 +52,7 @@ public class Player : MonoBehaviour
     int equipWeaponIndex = -1;
 
     GameObject nearObject;
-    Weapon equipWeapon;
+    public Weapon equipWeapon;
 
     Vector3 moveVec;
     Vector3 dodgeVec;
@@ -65,6 +68,8 @@ public class Player : MonoBehaviour
         meshs = GetComponentsInChildren<MeshRenderer>();
         
         fireDelay = 2;
+        if(!PlayerPrefs.HasKey("MaxScore"))
+            PlayerPrefs.SetInt("MaxScore", 0);
     }
 
     void FixedUpdate()
@@ -75,6 +80,8 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        if(isDead) return;
+
         InputSystem();
         Interaction();
         Move();
@@ -315,12 +322,24 @@ public class Player : MonoBehaviour
             rigid.velocity = Vector3.zero;
         }
 
+        if(health <= 0 && !isDead)
+        {
+            OnDie();
+        }
+
         foreach(MeshRenderer mesh in meshs)
         {
             mesh.material.color = Color.white;
         }
 
         isDamage = false;
+    }
+
+    void OnDie()
+    {
+        anim.SetTrigger("doDie");
+        isDead = true;
+        manager.GameOver();
     }
 
     void OnCollisionEnter(Collision other)
