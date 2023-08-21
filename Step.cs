@@ -1325,3 +1325,118 @@
 14. 반복문을 만들어서 한 줄을 읽고 제어문으로 읽은 라인이 null인지 확인한다. 아니면 리스트에 저장하는 작업을 수행하고 아니면 반복문을 탈출한다.
 15. 다 읽은 뒤에는 파일을 닫아 준다.
 */
+
+/*
+Json
+
+1. 데이터(코드 * 클래스)를 만들어야 함 -> 저장할 데이터 생성
+2. 그 데이터를 Json으로 변환( 택베상자로 포장 )
+
+클래스 만들기 ( TestUserData )
+클래스 생성 ( TestData )
+    => 속성으로 이름, 레벨, 시간 선언
+TestUserData 속성으로 TestData 초기화
+Start() 함수에서 제이슨을 만든다.
+    string jsonData = JasonUtility.ToJson(testPlayer);
+    print(jsonData);
+
+3. Json( 택배 )를 다시 원래 코드로 바꾸는 작업
+        => 제이슨( 택베 ) -> 조립도 -> 클래스( 코드 )
+
+Start() 함수에서 변환 함수를 호출
+    TestData testResive = JsonUtility.FromJson<TestData>(jsonData);
+    print(testResive.name);
+*/
+
+/*
+정보 조회 프로그램( Json )
+
+1. 캔버스에 Dropdown Ui 생성
+2. Json 에서 List 사용하기
+3. Json 을 C# 으로 바꾸기
+
+캔버스에 간단한 검색 UI 구조를 만든다.
+
+4. 던파 API를 받아온다.
+    서버, 
+5. 서버 스크립트 생성
+    네이스페이스 UI, Networking 추가
+    서버 통신을 위한 코루틴 생성( ServerRequest )
+        먼저 주소를 받아온다.
+        string url = URL 주소
+        UnityWebRequest www = UnityWebRequest.Get(url);
+        기다렷다가
+        yield return www.SendWebRequest();
+        에러를 확인
+        if(www.error == nullptr) 
+            Debug.Log(www.downloadHandler.text);
+        else
+            Debug.Log("Server Load Error");
+    구글 검색 : Json to C# -> Convert JSON to C# .... 선택
+        Json 내용을 복사 해서 넣어주고 Convert -> Convert 내용을 복사하여 스크립트에 등록
+            ServerInfo, ServerRoot 로 명명
+            클래스 위에 [System.Serializable] 작성
+    에러 확인 로직에 추가
+        var serverData = JsonUtility.FromJson<ServerRoot>(www.downloadHandler.text);
+        serverData.rows;
+    Dropdown 속성 선언
+        public Dropdown serverList;
+    에러 확인 로직에 추가
+        foreach(var sd in serverData.rows)
+            드롭다운은 옵션을 통해서 스크롤 항목이 늘어나기 때문에 지역 변수를 만든다.
+            Dropdown.OptionData option = new Dropdown.OptionsData();
+            option.text = sd.serverName;
+            드롭다운 속성의 옵션에 추가
+            serverList.options.Add(option);
+    선택된 서버를 인식하고 검색한 유저 ID를 찾아주는 기능
+        Dropdown의 자식 Label의 Text를 넘겨준다. InputField도 마찬가지
+    속성으로 서버아이디와 캐릭터 닉네임을 선언
+        string serverId = "";
+        string characterName = "";
+    만들어둔 검색 버튼과 연동할 함수를 만든다. CharacterSearch()
+        버튼이 눌리면 서버아이디와 닉네임을 속성에 채워주면 된다.
+        이때 서버의 속성이 아이디와 이름을 나뉘어 있는데 아이디는 영어, 이름은 한글이라 규격화된 변환 방법이 없다.
+            한글을 입력 받으면 영어로 변환해야 한다.
+            코루틴에서 만들어 두었던 ServerRoot 지역 변수를 속성으로 만들어 준다.
+                ServerRoot serverData = new ServerRoot();
+            Lavel의 텍스트를 속성으로 받는다.
+                public Text selectedServerName;
+            임시 변수에 텍스트를 저장
+                string temp = selectedServerName.text;
+            리스트에서 해당 이름을 찾아낸다.
+                serverId = serverData.rows.Find(x => x.serverName == temp).serverID;
+        InputField를 속성으로 받는다.
+            public InputField inputText;
+        캐릭터 닉네임은 inputText.text를 배정
+    캐릭터 검색 URL을 복사해서 받아 온다.
+    코루틴 함수 추가
+        CharacterRequiest(string serverId, string characterName)
+            string url = $"URL 주소 {serverId}...{characterName}"
+                URL 주소 중 사용하지 않는 캐릭터 이름 뒤부터 apikey 전까지 지워준다.
+            UnityWebRequest www = UnityWebRequest.Get(url);
+            yield return www.SendWebRequest();
+            if(www.error == nullptr)
+                Print(www.downloadHandler.text);
+            else
+                Debug.LogError(www.error);
+        URL 인코딩 작업을 거져서 CharacterName을 전달
+            검색 함수로 돌아가서 입력 받은 텍스트를 URL 형식으로 이스케이브하여 변환
+                characterName = UnityWebRequest.EscapeURL(inputText.text);
+    검색을 통해 캐릭터 정보를 Json으로 받았다면 마찾가지로 JsonToC#으로 컨버트하여 정보를 표로 만들 수 있다.
+        클래스가 많아지기는 하지만 일단 복사 CharacterInfo, CharacterRoot 명명
+    CharacterRoot 속성 선언 CharacterRoot characterData = new CharacterRoot();
+    검색 코루틴으로 가서 Json 파일 받기
+        characterData = JsonUtility.FromJson<CharacterRoot>(www.downloadHandler.text);
+    속성으로 캐릭터id를 선언한다. string characterId = "";
+    다시 검색 코루틴으로 가서 서버를 받을때와 같이 리스트에서 캐릭터 이름을 찾아서 id를 배정한다.
+        characterId = characterData.rows.Find(x => x.characterName == inputText.text).characterId;
+    캐릭터 이미지를 띄우는 코루틴 함수를 만든다. CharacterImageRequest(string serverId, string characterId)
+        string url = $"URL 주소 {serverId}...{characterId}"( zoom 은 1로 고정 )
+        UnityWebRequest www = UnityWebRequestTexture.GetTexture(url);
+        yield return www.SendWebRequest();
+        if(www.error == nullptr)
+                변환 작업을 거친후 씬에 만들어둔 UI이미지를 속성으로 받아와 저장 public RawImage img;
+                img.texture = ((DownloadHandlerTexture)www.downloadHandler).textrue;
+            else
+                Debug.LogError(www.error);
+*/
