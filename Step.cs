@@ -1326,117 +1326,174 @@
 15. 다 읽은 뒤에는 파일을 닫아 준다.
 */
 
+
+
+
+
+/* JSON */
+
 /*
-Json
+JSON( JavaScript Object Notation ) : 데이터 교환을 위한 경량의 데이터 형식
+    => 텍스트 형태로 구성되며, 사람이 읽고 쓰기 쉽고 기계가 파싱하고 생성하기도 쉽게 변환
+    => 주로 웹 어플리케이션과 서버 간의 데이터 교환에 사용되며, 
+        => 배열과 객체( 키-값 쌍 )의 조합으로 구성된다. 
+    => JSON은 프로그래밍 언어나 플랫폼에 종속되지 않고 일반적으로 사용될 수 있다.
 
-1. 데이터(코드 * 클래스)를 만들어야 함 -> 저장할 데이터 생성
-2. 그 데이터를 Json으로 변환( 택베상자로 포장 )
 
-클래스 만들기 ( TestUserData )
-클래스 생성 ( TestData )
-    => 속성으로 이름, 레벨, 시간 선언
-TestUserData 속성으로 TestData 초기화
-Start() 함수에서 제이슨을 만든다.
-    string jsonData = JasonUtility.ToJson(testPlayer);
-    print(jsonData);
 
-3. Json( 택배 )를 다시 원래 코드로 바꾸는 작업
-        => 제이슨( 택베 ) -> 조립도 -> 클래스( 코드 )
-
-Start() 함수에서 변환 함수를 호출
-    TestData testResive = JsonUtility.FromJson<TestData>(jsonData);
-    print(testResive.name);
+1. Json Data 로 변환할 구조체 혹은 클래스 생성 ( TestData : 객체의 속성 집합 )
+2. ToJson 혹은 FromJson 을 통해 데이터를 읽고 쓸 클래스 만들기 ( TestUserData )
+3. Data 를 받기 위한 속성을 만들어 준다.
+4. Start() 함수에서 string 타입 지역 변수를 만들어서 Json 으로 변환된 Data 를 저장 받는다.
+    => string jsonData = JasonUtility.ToJson(testPlayer);
+    => print(jsonData);
+5. Start() 함수에서 Data 를 받기 위한 지역 변수를 만들어서 C# Data 로 변환된 Data 를 저장 받는다.
+    => TestData testResive = JsonUtility.FromJson<TestData>(jsonData);
+    => print(testResive.name);
 */
 
 /*
-정보 조회 프로그램( Json )
+정보 조회 프로그램( Json + HTTP + API )
+    => 던전앤파이터의 유저 정보 검색 프로그램을 만들어 보자
 
-1. 캔버스에 Dropdown Ui 생성
-2. Json 에서 List 사용하기
-3. Json 을 C# 으로 바꾸기
-
-캔버스에 간단한 검색 UI 구조를 만든다.
-
-4. 던파 API를 받아온다.
-    서버, 
-5. 서버 스크립트 생성
-    네이스페이스 UI, Networking 추가
-    서버 통신을 위한 코루틴 생성( ServerRequest )
-        먼저 주소를 받아온다.
-        string url = URL 주소
-        UnityWebRequest www = UnityWebRequest.Get(url);
-        기다렷다가
-        yield return www.SendWebRequest();
-        에러를 확인
-        if(www.error == nullptr) 
-            Debug.Log(www.downloadHandler.text);
-        else
-            Debug.Log("Server Load Error");
-    구글 검색 : Json to C# -> Convert JSON to C# .... 선택
-        Json 내용을 복사 해서 넣어주고 Convert -> Convert 내용을 복사하여 스크립트에 등록
-            ServerInfo, ServerRoot 로 명명
-            클래스 위에 [System.Serializable] 작성
-    에러 확인 로직에 추가
+1. 던전앤파이터 API 홈페이지에 접속하여 "서버 URL"을 받아온다.
+2. 서버 선택 + 캐릭터 검색을 담당할 스크립트를 만든다.( TestServer )
+    => UI 와의 상호 작용, 서버와의 통신을 위한 네임스페이스를 추가 한다.
+        => using UnityEngine.UI;
+        => using UnityEngine.Networking;
+3. 서버와의 통신을 위한 코루틴 함수를 만든다.( ServerRequiest )
+    => UnityWebRequest : Unity 엔진에서 제공하는 네트워크 요청 및 통신을 관리하는 클래스
+    {
+        1. 서버 URL 을 string 타입의 지역 변수로 받는다.
+        2. UnityWebRequest 타입의 지역 변수를 만들고 Getter 를 통해 주소를 저장 한다.
+            => string url = URL 주소
+            => UnityWebRequest www = UnityWebRequest.Get(url);
+        3. 웹 서버로 요청을 보내고 요쳥이 완료될 때 까지 대기
+            => yield return www.SendWebRequest();
+        4. 에러가 발생하지 않았다면 웹 서버로부터 받은 Json 데이터를 문자열로 출력
+            => if(www.error == null) Debug.Log(www.downloadHandler.text);
+        5. 에러가 있다면 에러를 출력
+            => else Debug.Log("Server Load Error");
+    }
+4. Start() 함수에서 서버 통신 코루틴을 호출한다.
+    => Response Body : 
+        클라이언트가 서버에게 보낸 요청( Request )에 대한 서버의 응답( Response ) 중에서, 
+        실제 데이터가 담겨 있는 부분을 말한다. 
+        이 부분은 주로 JSON, XML 등의 형식으로 구성되어 클라이언트에게 반환된다.
+    => 출력된 Response Body를 복사 한다.
+5. 구글 검색 : Json to C# -> Convert JSON to C# .... 선택
+    => Convert -> Convert 내용을 복사하여 스크립트에 등록( ServerInfo, ServerRoot )
+    => 클래스 위에 [System.Serializable] 작성하여 JSON이나 XML과 같은 형식으로 직렬화하여 사용
+6. 서버 통신 코루틴으로 돌아가서 Json Data를 C# Data로 변환하여 받는다.
+    {
+        ServerRequiest 코루틴... 요청을 받은 다음...
+        
+        1. JsonUtility 클래스를 사용하여 Json 타입의 문자열을 C# Data( ServerRoot ) 클래스의 객체로 역직렬화 한다.
         var serverData = JsonUtility.FromJson<ServerRoot>(www.downloadHandler.text);
-        serverData.rows;
-    Dropdown 속성 선언
-        public Dropdown serverList;
-    에러 확인 로직에 추가
+        2. Json Data 를 담은 리스트에 접근해 서버이름을 출력해 본다.
+        print(serverData.rows[0].serverName);
+    }
+7. Dropdown 의 항목에 서버에서 받은 Data 를 넣기 위해 먼저 속성을 만든다.( public Dropdown serverList; )
+8. 서버 통신 코루틴으로 돌아가서 서버 이름을 하나씩 집어 넣는다.
+    {
+        1. foreach() 문으로 Data 리스트에 하나씩 접근하여 서버 이름을 받는다.
         foreach(var sd in serverData.rows)
-            드롭다운은 옵션을 통해서 스크롤 항목이 늘어나기 때문에 지역 변수를 만든다.
-            Dropdown.OptionData option = new Dropdown.OptionsData();
-            option.text = sd.serverName;
-            드롭다운 속성의 옵션에 추가
-            serverList.options.Add(option);
-    선택된 서버를 인식하고 검색한 유저 ID를 찾아주는 기능
-        Dropdown의 자식 Label의 Text를 넘겨준다. InputField도 마찬가지
-    속성으로 서버아이디와 캐릭터 닉네임을 선언
-        string serverId = "";
-        string characterName = "";
-    만들어둔 검색 버튼과 연동할 함수를 만든다. CharacterSearch()
-        버튼이 눌리면 서버아이디와 닉네임을 속성에 채워주면 된다.
-        이때 서버의 속성이 아이디와 이름을 나뉘어 있는데 아이디는 영어, 이름은 한글이라 규격화된 변환 방법이 없다.
-            한글을 입력 받으면 영어로 변환해야 한다.
-            코루틴에서 만들어 두었던 ServerRoot 지역 변수를 속성으로 만들어 준다.
-                ServerRoot serverData = new ServerRoot();
-            Lavel의 텍스트를 속성으로 받는다.
-                public Text selectedServerName;
-            임시 변수에 텍스트를 저장
-                string temp = selectedServerName.text;
-            리스트에서 해당 이름을 찾아낸다.
-                serverId = serverData.rows.Find(x => x.serverName == temp).serverID;
-        InputField를 속성으로 받는다.
-            public InputField inputText;
-        캐릭터 닉네임은 inputText.text를 배정
-    캐릭터 검색 URL을 복사해서 받아 온다.
-    코루틴 함수 추가
-        CharacterRequiest(string serverId, string characterName)
-            string url = $"URL 주소 {serverId}...{characterName}"
-                URL 주소 중 사용하지 않는 캐릭터 이름 뒤부터 apikey 전까지 지워준다.
-            UnityWebRequest www = UnityWebRequest.Get(url);
+        2. 드롭다운은 옵션을 통해서 스크롤 항목이 늘어나기 때문에 옵션 타입을 새롭게 만든다.
+        Dropdown.OptionData option = new Dropdown.OptionsData();
+        3. 옵션에 서버 이름을 배정한다.
+        option.text = sd.serverName;
+        4. 드롭다운 속성에 접근하여 options에 이번에 만든 옵션 타입 변수를 추가한다.
+        serverList.options.Add(option);
+    }
+
+#. 선택된 서버를 인식하고 검색한 유저를 찾기 위해 Dropdown의 자식, Label와 InputField의 Text를 넘겨주도록 한다.
+    
+9. 속성으로 서버 아이디와 캐릭터 닉네임을 만든다.
+    => string serverId = "";
+    => string characterName = "";
+10. 만들어둔 검색 버튼과 연동할 함수를 만든다. CharacterSearch()
+    => 버튼이 눌리면 서버 아이디와 닉네임을 속성에 채워주면 된다.
+11. 서버를 한글로 입력 받으면 이것을 영어로 변환해야 한다.
+    => 코루틴에서 만들어 두었던 ServerRoot 지역 변수를 속성으로 만들어 준다.
+        => ServerRoot serverData = new ServerRoot();
+    => 선택된 서버를 알기 위해 Lavel의 텍스트를 속성으로 받는다.
+        => public Text selectedServerName;
+    {
+        CharacterSearch() 함수
+
+        1. 선택된 서버 이름을 임시 변수를 만들어서 저장한다.
+        string temp = selectedServerName.text;
+        2. 요청 받은 서버 Data 의 리스트에서 선택된 서버 이름과 같은 Data 를 찾아서 Id 속성에 저장한다.
+        serverId = serverData.rows.Find(x => x.serverName == temp).serverID;
+        print(serverId);
+    }
+12. 사용자가 검색한 닉네임이 저장된 InputField를 속성으로 받는다.
+    => public InputField inputText;
+13. 캐릭터 닉네임은 inputText.text를 배정
+    {
+        CharacterSearch() 함수...
+
+        characterName = inputText.text;
+    }
+14. 캐릭터 검색 URL을 복사해서 받아 온다.
+15. 코루틴 함수 추가 CharacterRequest(string serverId, string characterName)
+    {
+        1. URL 주소에서 필요한 정보만 받아 온다.
+            => URL 주소 중 사용하지 않는 캐릭터 이름 뒤부터 apikey 전까지 지워준다.
+        string url = $"URL 주소 {serverId}...{characterName}"
+        2. 서버 선택 때와 마찬가지로 요청을 하고 요청을 돌려 받을 때 까지 대기한다.
+        UnityWebRequest www = UnityWebRequest.Get(url);
             yield return www.SendWebRequest();
-            if(www.error == nullptr)
-                Print(www.downloadHandler.text);
-            else
-                Debug.LogError(www.error);
-        URL 인코딩 작업을 거져서 CharacterName을 전달
-            검색 함수로 돌아가서 입력 받은 텍스트를 URL 형식으로 이스케이브하여 변환
-                characterName = UnityWebRequest.EscapeURL(inputText.text);
-    검색을 통해 캐릭터 정보를 Json으로 받았다면 마찾가지로 JsonToC#으로 컨버트하여 정보를 표로 만들 수 있다.
-        클래스가 많아지기는 하지만 일단 복사 CharacterInfo, CharacterRoot 명명
-    CharacterRoot 속성 선언 CharacterRoot characterData = new CharacterRoot();
-    검색 코루틴으로 가서 Json 파일 받기
+        3. 에러가 발생하지 않았다면 웹 서버로부터 받은 Json 데이터를 문자열로 출력
+        if(www.error == nullptr)
+            Print(www.downloadHandler.text);
+        else
+            Debug.LogError(www.error);
+    }
+16. 검색 버튼이 눌릴 때 호출되는 함수에서 코루틴을 호출한다.
+17. URL 인코딩 작업을 거져서 CharacterName을 전달
+    => URL 인코딩(URL Encoding) : URL에 사용되는 문자 중에서 특별한 의미를 가지거나 
+        => URL 구조를 깨뜨릴 수 있는 문자들을 안전하게 전송하기 위해 해당 문자를 
+        => 다른 형식으로 변환하는 과정
+            => 예를 들어 공백 문자는 URL에서 %20으로 인코딩된다. 
+                => 따라서 "Hello World"라는 문장을 URL에 포함하려면 
+                => "Hello%20World"로 인코딩된다.
+                => 이렇게 하면 웹 서버나 브라우저가 URL을 올바르게 해석할 수 있게 된다.
+    => 검색 함수로 돌아가서 입력 받은 텍스트를 URL 형식으로 이스케이프하여 변환
+    {
+        CharacterSearch()...
+
+        characterName = UnityWebRequest.EscapeURL(inputText.text);
+    }
+
+*. 검색을 통해 캐릭터 정보를 Json으로 받았다면 마찾가지로 JsonToC#으로 컨버트하여 정보를 표로 만들 수 있다.
+    
+18. 클래스가 많아지기는 하지만 일단 복사 CharacterInfo, CharacterRoot 명명
+19. CharacterRoot 속성 선언 CharacterRoot characterData = new CharacterRoot();
+20. 검색 코루틴으로 돌아가서 Json 파일을 캐릭터 Data 에 저장한다.
+    {
+        CharacterRequest(string serverId, string characterName)...
+
         characterData = JsonUtility.FromJson<CharacterRoot>(www.downloadHandler.text);
-    속성으로 캐릭터id를 선언한다. string characterId = "";
-    다시 검색 코루틴으로 가서 서버를 받을때와 같이 리스트에서 캐릭터 이름을 찾아서 id를 배정한다.
+    }
+21. 속성으로 캐릭터id를 선언한다. string characterId = "";
+22. 다시 검색 코루틴으로 가서 서버를 받을때와 같이 리스트에서 캐릭터 이름을 찾아서 id를 배정한다.
+    {
+        CharacterRequest(string serverId, string characterName)...
+
         characterId = characterData.rows.Find(x => x.characterName == inputText.text).characterId;
-    캐릭터 이미지를 띄우는 코루틴 함수를 만든다. CharacterImageRequest(string serverId, string characterId)
+    }
+23. 캐릭터 이미지를 띄우는 코루틴 함수를 만든다. CharacterImageRequest(string serverId, string characterId)
+    {
+        1. 다른 코루틴과 마찬가지로 주소를 받고 요청하고 대기하고
         string url = $"URL 주소 {serverId}...{characterId}"( zoom 은 1로 고정 )
         UnityWebRequest www = UnityWebRequestTexture.GetTexture(url);
         yield return www.SendWebRequest();
-        if(www.error == nullptr)
-                변환 작업을 거친후 씬에 만들어둔 UI이미지를 속성으로 받아와 저장 public RawImage img;
-                img.texture = ((DownloadHandlerTexture)www.downloadHandler).textrue;
-            else
-                Debug.LogError(www.error);
+    }
+24. 씬에 만들어 둔 UI 이미지를 속성으로 받는다.
+    public RawImage img;
+25. 이미지 코루틴 함수로 돌아가서 변환 작업을 거친후 UI 속성에 저장
+    {
+        img.texture = ((DownloadHandlerTexture)www.downloadHandler).textrue;
+    }
 */
