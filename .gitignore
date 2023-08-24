@@ -17,3 +17,6 @@ Spawn.cs.meta
 StartZone.cs.meta
 TestUserData.cs.meta
 TestServer.cs.meta
+DataManager.cs.meta
+Game.cs.meta
+Select.cs.meta

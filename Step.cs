@@ -1497,3 +1497,207 @@ JSON( JavaScript Object Notation ) : 데이터 교환을 위한 경량의 데이
         img.texture = ((DownloadHandlerTexture)www.downloadHandler).textrue;
     }
 */
+
+
+
+
+
+/*
+< Json 을 이용하여 저장/불러오기 기능 구현 >
+
+1. 슬롯 선택 씬과 게임 진행 씬을 구분한다.
+2. 각 씬의 기능을 담당해 줄 스크립트( Select, Game )를 만든다.
+3. 데이터를 전담해서 만들어줄 스크립트( DataManager )를 만든다.
+    {
+        저장하는 방법
+            1. 저장할 데이터가 존재해야 한다.
+            2. 데이터를 Json 으로 변환
+            3. Json 을 외부에 저장
+
+        불러오는 방법
+            1. 외부에 저장된 Json 을 가져온다.
+            2. Json 을 데이터로 변환
+            3. 불러온 데이터를 사용
+    }
+*/
+
+/*
+1. DataManager 클래스를 싱글톤 패턴으로 구성한다.
+    public static DataManager instance;
+    Awake()
+    {
+        if(instance == null) instance = this;
+        else if(instance != this) Destroy(instance.gameObject);
+        DontDestroyOnLoad(this.gameObject);
+    }
+2. Data 를 전담하여 관리해 줄 클래스를 만든다.
+    public class PlayerData
+    {
+        public string name;
+        public int stage;
+        public int score;
+        public bool[] hasWeapon = new bool[3];
+        public int ammo;
+        public int grenade;
+        public int coin;
+    }
+3. DataManager 클래스에서 Data 를 속성으로 만든다.
+    PlayerData curPlayer = new PlayerData();
+4. Start() 함수에서 Data 를 Json 으로 변환 한다.
+    {
+        1. 지역 변수에 Json 으로 변환된 Data 를 저장한다.
+        string data = JsonUtility.ToJson(curPlayer);
+        2. Json 을 출력한다.
+        print(data);
+    }
+5. 저장/불러오기 를 하기 위해 네임스페이스를 추가
+    using System.IO;
+6. 저장 위치를 담을 속성, 파일 명 속성을 만든다.
+    string path;
+    string filename = save;
+    => Awake() 함수로 가서 유니티가 지정해준 경로를 저장한다.
+        =>path = Application.persistentDataPath + "/";
+7. 다시 Start() 함수로 돌아가 File 클래스를 통해서 저장
+    {
+        Start()...
+
+        File.WriteAllText(path + filename, data);
+    }
+8. 저장/불러오기 함수를 각각 만든다.
+    public void SaveData(), public void LoadData()
+9. Start() 함수에 작성하였던 저장 로직을 저장 함수로 옮긴다.
+10. Load() 함수에서 저장된 경로에서 파일을 불러온다.
+    {
+        1. 지역 변수에 불러온 Json 을 저장
+        string data = File.ReadAllText(path + filename);
+        2. Json 을 Data 형식으로 변환 하여 현재 플레이어에 적용
+        curPlayer = JsonUtility.FromJson<PlayerData>(data);
+    }
+*/
+
+/*
+1. Select 클래스에서 선택 화면 UI를 관리하기 위해 네이스페이스를 추가
+    using UnityEngine.UI;
+2. 빈 슬롯을 선택 했을 때 띄워지는 윈도우를 게임 오브젝트 속성으로 받는다.
+    public GameObject creat;
+3. 빈 슬롯에서 호출할 함수를 만든다.
+    public void CreatSlot()
+    {
+        1. 생성 오브젝트를 활성화
+        creat.SetActive(true);
+    }
+4. 슬롯의 텍스트 문구를 지정하기 위한 텍스트 속성을 만든다.
+    public Text[] slotText;
+5. 슬롯이 선택되었을 때 호출되는 함수를 만든다.
+    public void Slot()
+    {
+        1. 저장된 데이터가 없을 때 생성 함수 호출
+        CreatSlot();
+    }
+6. 게임 씬을 불러오기 위에 네임스페이스 추가
+    using UnityEngine.SceneManagement;
+7. 게임 씬을 불러오는 함수를 만든다.
+    public void GoGame()
+    {
+        1. 씬을 호출한다.
+        SceneManager.LoadScene(1);
+    }
+8. DataManager 클래스로 가서 현재 선택된 슬롯을 구분하기 위한 속성을 만든다.
+    public int curSlot;
+9. DataManager 클래스의 속성 curPlayer 를 public 으로 변환
+10. DataManager 클래스에서 데이터를 저장할 때 슬롯 번호를 추가로 기입해 준다.
+    {
+        SaveData()...
+
+        File.WriteAllText(path + filename + curSlot.ToString(), data);
+    }
+11. DataManager 클래스에서 데이터를 불러올 때도 슬롯 번호를 추가로 기입해 준다.
+    {
+        LoadData()...
+
+        string data = File.ReadAllText(path + filename + curSlot.ToString());
+    }
+12. 다시 Select 클래스로 돌아가서 Slot 함수의 매개 변수로 슬롯 번호를 받는다.
+    public void Slot(int slotNum)
+    {
+        1. DataManager 클래스의 속성 curSlot 에 매개변수를 배정
+        DataManager.instance.curSlot = slotNum;
+
+        CreatSlot();
+
+        2. 저장된 데이터가 있을 때 DataManager 클래스의 데이터 불러오기 함수를 호출
+        DataManager.instance.LoadData();
+        3. 게임 씬을 불러오는 함수 호출
+        GoGame();
+    }
+13. 새로운 슬롯을 만들 때 입력 받은 사용자 이름을 속성으로 받는다.
+    public Text newPlayerName;
+14. 네임스페이스로 저장/불러오기를 추가한다.
+    using System.IO;
+15. 새로운 슬롯을 만들 때 입력 받은 사용자 이름을 저장하기 위해 Start() 함수에서 저장된 데이터가 존재하는지 판단하도록 한다.
+    Start()
+    {
+        1. 슬롯별로 저장된 데이터가 존재하는지 판단
+        for(int i = 0; i < 4; i++)
+            if(File.Exists(DataManager.instance.path + $"{i}"))
+    }
+16. DataManager 클래스에서 path 와 filename 으로 데이터를 저장하였는데, path 와 filename 을 합치도록 한다.
+    => filename 속성을 지운다.
+    => Awake() 에서 path 를 초기화 할 때 filename 을 그냥 리터럴로 추가하도록 한다.
+    {
+        Awake()...
+
+        path = Application.persistentDataPath = "/save";
+    }
+    => 이후 path 속성을 public 으로 수정한다.
+17. 다시 Select 클래스로 돌아가서 slot 에 저장된 파일이 존재하는지 저장할 bool 속성을 만든다.
+    bool[] savefile = new bool[4];
+18. Start() 함수에서 세이브 파일이 존재하는지를 속성에 저장
+    {
+        Start()...
+
+        1. 데이터가 존재할 경우 참을 저장
+        savefile[i] = true;
+        2. 현재 슬롯 번호를 저장
+        DataManager.instance.curSlot = i;
+        3. 데이터 불러오기
+        DataManager.instance.LoadData();
+        4. 슬롯 텍스트를 사용자 이름으로 출력
+        slotText[i].text = DataManager.instance.curPlayer.name;
+        5. 만약 슬롯이 비어 있다면 비어있음 출력
+        else slotText[i].text = "비어있음";
+    }
+19. DataManager 클래스에 slot 의 저장 정보를 담을 공간의 초기화 기능을 함수로 만든다.
+    public void DataClear()
+    {
+        1. 슬롯의 번호를 초기화
+        curSlot = -1;
+        2. 사용자 Data 공간 초기화
+        curPlayer = new PlayerData();
+    }
+20. Start() 함수에서 세이브 파일 존재 여부를 확인하였다면 정보 공간을 리셋
+    {
+        Start()...
+
+        1. slot 저장 정보 초기화
+        DataManager.instance.DataClear();
+    }
+21. Slot() 함수로 가서 슬롯 저장 상태에 따른 제어문을 추가 한다.
+    {
+        ...
+
+        1. 저장된 데이터가 있다면 데이터를 불러온다.
+        if(savefile[slotNum]) DataManager.instance.LoadData();
+            2. 저장된 데이터가 있을 때 게임 화면으로 이동한다.
+            GoGame();
+        3. 자장된 데이터가 없다면 데이터를 만든다.
+        else CreatSlot();
+    }
+22. GoGame() 함수로 가서 슬롯 저장 상태에 따른 제어문을 추가 한다.
+    {
+        1. 저장된 정보가 없다면 새로운 정보를 저장
+        if(!savefile[DataManager.instance.curSlot])
+            DataManager.instance.curPlayer.name = newPlayerName.text;
+            DataManager.instance.SaveData();
+    }
+*/
