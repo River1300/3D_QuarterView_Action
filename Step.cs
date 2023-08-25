@@ -1534,12 +1534,12 @@ JSON( JavaScript Object Notation ) : 데이터 교환을 위한 경량의 데이
     public class PlayerData
     {
         public string name;
-        public int stage;
+        public int stage = 1;
         public int score;
         public bool[] hasWeapon = new bool[3];
         public int ammo;
         public int grenade;
-        public int coin;
+        public int coin = 1000;
     }
 3. DataManager 클래스에서 Data 를 속성으로 만든다.
     PlayerData curPlayer = new PlayerData();
@@ -1699,5 +1699,36 @@ JSON( JavaScript Object Notation ) : 데이터 교환을 위한 경량의 데이
         if(!savefile[DataManager.instance.curSlot])
             DataManager.instance.curPlayer.name = newPlayerName.text;
             DataManager.instance.SaveData();
+    }
+*/
+
+/*
+1. GameManager 클래스에서 스테이지가 종료될 때 자동 저장 시킨다.
+    public void StageEnd()
+    {
+        ...
+
+        1. DataManager 에서 Data 를 저장
+        DataManager.instance.SaveData();
+        2. 저장을 했다는 것을 유저에게 알림
+        NoticeSave();
+    }
+2. 로드 되었다면 GameManager 속성에 점수, 돈, 총알 등의 값을 배정한다.
+    {
+        Start()...
+
+        1. 스테이지 레벨 배정
+        stage = DataManager.instance.curPlayer.stage;
+        2. 점수 배정
+        score = DataManager.instance.curPlayer.score;
+        3. 플레이어가 보유하고 있는 무기
+        for(int i = 0; i < player.hasWeapon.Length; i++)
+            player.hasWeapon[i] = DataManager.instance.curPlayer.hasWeapon[i];
+        4. 총알 개수 배정
+        player.ammo = DataManager.instance.curPlayer.ammo;
+        5. 수류탄 개수 배정
+        player.grenade = DataManager.instance.curPlayer.grenade;
+        6. 코인 배정
+        player.coin = DataManager.instance.curPlayer.coin;
     }
 */

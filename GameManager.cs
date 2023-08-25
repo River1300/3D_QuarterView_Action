@@ -7,11 +7,15 @@ using System.IO;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager instance;
+
     public GameObject menuCam;
     public GameObject gameCam;
     public GameObject menuPanel;
     public GameObject gamePanel;
     public GameObject overPanel;
+    public GameObject searchPanel;
+    public GameObject notice;
     public GameObject itemShop;
     public GameObject weaponShop;
     public GameObject startZone;
@@ -62,6 +66,18 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
+        #region 싱글톤
+        if(instance == null)
+        {
+            instance = this;
+        }
+        else if(instance != this)
+        {
+            Destroy(instance.gameObject);
+        }
+        DontDestroyOnLoad(this.gameObject);
+        #endregion
+
         enemyList = new List<int>();
         spawnList = new List<Spawn>();
 
@@ -144,8 +160,11 @@ public class GameManager : MonoBehaviour
 
     public void GameStart()
     {
+        LoadPlayer();
+
         menuCam.SetActive(false);
         menuPanel.SetActive(false);
+        searchPanel.SetActive(false);
 
         gameCam.SetActive(true);
         gamePanel.SetActive(true);
@@ -188,6 +207,10 @@ public class GameManager : MonoBehaviour
         stage++;
 
         player.transform.position = Vector3.up * 1.0f;
+
+        SavePlayer();
+        NoticeSave();
+        DataManager.instance.SaveData();
     }
 
     IEnumerator InBattle()
@@ -270,5 +293,42 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         SceneManager.LoadScene(0);
+    }
+
+    void SavePlayer()
+    {
+        DataManager.instance.curPlayer.stage = stage;
+        DataManager.instance.curPlayer.score = player.score;
+        for(int i = 0; i < player.hasWeapon.Length; i++)
+        {
+            DataManager.instance.curPlayer.hasWeapon[i] = player.hasWeapon[i];
+        }
+        DataManager.instance.curPlayer.ammo = player.ammo;
+        DataManager.instance.curPlayer.grenade = player.grenade;
+        DataManager.instance.curPlayer.coin = player.coin;
+    }
+
+    void LoadPlayer()
+    {
+        stage = DataManager.instance.curPlayer.stage;
+        player.score = DataManager.instance.curPlayer.score;
+        for(int i = 0; i < player.hasWeapon.Length; i++)
+        {
+            player.hasWeapon[i] = DataManager.instance.curPlayer.hasWeapon[i];
+        }
+        player.ammo = DataManager.instance.curPlayer.ammo;
+        player.grenade = DataManager.instance.curPlayer.grenade;
+        player.coin = DataManager.instance.curPlayer.coin;
+    }
+
+    void NoticeSave()
+    {
+        notice.transform.localScale = Vector3.one;
+        Invoke("EndNotice", 3.0f);
+    }
+
+    void EndNotice()
+    {
+        notice.transform.localScale = Vector3.zero;
     }
 }
